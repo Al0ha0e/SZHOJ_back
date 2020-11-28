@@ -119,3 +119,10 @@ func (hdl *DBHandler) GetStatus(info *Status) *[]Status {
 	query.Find(&ret)
 	return &ret
 }
+
+//GetMiniStatus Get Mini mum Status For User
+func (hdl *DBHandler) GetMiniStatus(userID uint64) *[]MiniStatus {
+	ret := make([]MiniStatus, 0)
+	hdl.sqlDB.Table("statuses").Where("user_id=?", userID).Select("id, question_id, state").Scan(&ret)
+	return &ret
+}

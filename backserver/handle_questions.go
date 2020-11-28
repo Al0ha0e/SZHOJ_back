@@ -10,6 +10,7 @@ import (
 )
 
 func (bs *BackServer) getQuestionsByPage(c *gin.Context) {
+	fmt.Println("HEAR")
 	pg := c.DefaultQuery("pg", "1")
 	cnt := c.DefaultQuery("cnt", "10")
 	pgnum, _ := strconv.ParseUint(pg, 0, 32)

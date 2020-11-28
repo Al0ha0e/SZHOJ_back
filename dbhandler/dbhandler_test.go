@@ -37,10 +37,10 @@ func TestAddQuestion(t *testing.T) {
 
 func TestAddStatus(t *testing.T) {
 	st := Status{
-		QuestionID:    1004,
+		QuestionID:    1,
 		UserID:        10,
 		CommitTime:    time.Now(),
-		State:         1,
+		State:         2,
 		RunningTime:   800,
 		RunningMemory: 500,
 	}
@@ -99,4 +99,16 @@ func TestGetStatus(t *testing.T) {
 		fmt.Println(val.ID, val.QuestionID, val.UserID)
 	}
 	//t.Log((*sq)[0].Name)
+}
+
+func TestGetMiniStatus(t *testing.T) {
+	hd := GetDBHandler()
+	err := hd.InitDBHandler()
+	if err != nil {
+		t.Error(err)
+	}
+	msq := hd.GetMiniStatus(10)
+	for _, val := range *msq {
+		fmt.Println(val.ID, val.QuestionID, val.State)
+	}
 }

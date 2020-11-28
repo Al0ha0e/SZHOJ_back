@@ -45,6 +45,13 @@ type Status struct {
 	TotalContestStatus []ContestStatus `gorm:"ForeignKey:StatusID" json:"-"`
 }
 
+//MinimumStatus for single user
+type MiniStatus struct {
+	ID         uint `json:"id"`
+	QuestionID uint `json:"qid"`
+	State      uint `json:"state"`
+}
+
 //Tag tag structure
 type Tag struct {
 	//	ID   uint   `json:"-"`

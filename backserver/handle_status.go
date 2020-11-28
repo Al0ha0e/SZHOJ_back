@@ -16,7 +16,7 @@ func (bs *BackServer) getStatusByPage(c *gin.Context) {
 	ippg, _ := strconv.ParseUint(cnt, 0, 32)
 	ret := bs.handler.GetStatusByPage(pgnum, ippg)
 	if len(*ret) < 1 {
-		c.String(http.StatusNotFound, "no such page")
+		c.String(http.StatusNotFound, "no such status")
 	} else {
 		c.JSON(http.StatusOK, *ret)
 	}
@@ -40,5 +40,16 @@ func (bs *BackServer) getOrSetStatus(c *gin.Context) {
 		}
 	} else {
 		c.String(http.StatusNotFound, `invalid form`)
+	}
+}
+
+func (bs *BackServer) getMiniStatus(c *gin.Context) {
+	uid := c.DefaultQuery("uid", "0")
+	uidNum, _ := strconv.ParseUint(uid, 0, 32)
+	ret := bs.handler.GetMiniStatus(uidNum)
+	if len(*ret) < 1 {
+		c.String(http.StatusNotFound, "no such status")
+	} else {
+		c.JSON(http.StatusOK, *ret)
 	}
 }
