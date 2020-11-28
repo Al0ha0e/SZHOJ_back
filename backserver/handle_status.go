@@ -9,15 +9,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (bs *BackServer) getQuestionsByPage(c *gin.Context) {
+func (bs *BackServer) getStatusByPage(c *gin.Context) {
 	pg := c.DefaultQuery("pg", "1")
 	cnt := c.DefaultQuery("cnt", "10")
 	pgnum, _ := strconv.ParseUint(pg, 0, 32)
 	ippg, _ := strconv.ParseUint(cnt, 0, 32)
-	// if err != nil{
-	// 	c.
-	// }
-	ret := bs.handler.GetQuestionsByPage(pgnum, ippg)
+	ret := bs.handler.GetStatusByPage(pgnum, ippg)
 	if len(*ret) < 1 {
 		c.String(http.StatusNotFound, "no such page")
 	} else {
@@ -25,14 +22,12 @@ func (bs *BackServer) getQuestionsByPage(c *gin.Context) {
 	}
 }
 
-func (bs *BackServer) getOrSetQuestions(c *gin.Context) {
-	qInfo := dbhandler.Question{}
-	if err := c.ShouldBind(&qInfo); err == nil {
-		fmt.Println(qInfo.Name, qInfo.ID, qInfo.Tags)
-		if qInfo.ID != 0 {
-			fmt.Println("QUERY")
-			qInfo.ID = 0
-			ret := bs.handler.GetQuestions(&qInfo)
+func (bs *BackServer) getOrSetStatus(c *gin.Context) {
+	sInfo := dbhandler.Status{}
+	if err := c.ShouldBind(&sInfo); err == nil {
+		if sInfo.ID != 0 {
+			sInfo.ID = 0
+			ret := bs.handler.GetStatus(&sInfo)
 			if len(*ret) < 1 {
 				c.String(http.StatusNotFound, "question not found")
 			} else {

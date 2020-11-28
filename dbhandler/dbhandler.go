@@ -20,43 +20,43 @@ func GetDBHandler() *DBHandler {
 }
 
 //InitDBHandler Init DBHandler
-func (this *DBHandler) InitDBHandler() (err error) {
-	print("DSDIU")
-	this.sqlDB, err = gorm.Open("mysql", dbstr)
-	print("DSDIU2")
+func (hdl *DBHandler) InitDBHandler() (err error) {
+	hdl.sqlDB, err = gorm.Open("mysql", dbstr)
 	if err != nil {
 		return err
 	}
-	if !this.sqlDB.HasTable(&Question{}) {
-		this.sqlDB.CreateTable(&Question{})
+	if !hdl.sqlDB.HasTable(&Question{}) {
+		hdl.sqlDB.CreateTable(&Question{})
 	}
-	if !this.sqlDB.HasTable(&User{}) {
-		this.sqlDB.CreateTable(&User{})
+	if !hdl.sqlDB.HasTable(&User{}) {
+		hdl.sqlDB.CreateTable(&User{})
 	}
-	if !this.sqlDB.HasTable(&Status{}) {
-		this.sqlDB.CreateTable(&Status{})
+	if !hdl.sqlDB.HasTable(&Status{}) {
+		hdl.sqlDB.CreateTable(&Status{})
 	}
-	if !this.sqlDB.HasTable(&Tag{}) {
-		this.sqlDB.CreateTable(&Tag{})
+	if !hdl.sqlDB.HasTable(&Tag{}) {
+		hdl.sqlDB.CreateTable(&Tag{})
 	}
-	if !this.sqlDB.HasTable(&UserGroup{}) {
-		this.sqlDB.CreateTable(&UserGroup{})
+	if !hdl.sqlDB.HasTable(&UserGroup{}) {
+		hdl.sqlDB.CreateTable(&UserGroup{})
 	}
-	if !this.sqlDB.HasTable(&Contest{}) {
-		this.sqlDB.CreateTable(&Contest{})
+	if !hdl.sqlDB.HasTable(&Contest{}) {
+		hdl.sqlDB.CreateTable(&Contest{})
 	}
-	if !this.sqlDB.HasTable(&ContestStatus{}) {
-		this.sqlDB.CreateTable(&ContestStatus{})
+	if !hdl.sqlDB.HasTable(&ContestStatus{}) {
+		hdl.sqlDB.CreateTable(&ContestStatus{})
 	}
 	return nil
 }
 
-func (this *DBHandler) AddQuestion(q *Question) {
-	this.sqlDB.Create(q)
+//AddQuestion AddQuestion
+func (hdl *DBHandler) AddQuestion(q *Question) {
+	hdl.sqlDB.Create(q)
 }
 
-func (this *DBHandler) AddStatus(s *Status) {
-	this.sqlDB.Create(s)
+//AddStatus AddStatus
+func (hdl *DBHandler) AddStatus(s *Status) {
+	hdl.sqlDB.Create(s)
 }
 
 // func (this *DBHandler) GetQuestion(info *Question) error {
@@ -65,35 +65,57 @@ func (this *DBHandler) AddStatus(s *Status) {
 // }
 
 //GetQuestionsByPage Get All questions
-func (this *DBHandler) GetQuestionsByPage(pageNum uint64, itemPerPage uint64) *[]Question {
+func (hdl *DBHandler) GetQuestionsByPage(pageNum uint64, itemPerPage uint64) *[]Question {
 	ret := make([]Question, 0)
 	st := (pageNum - 1) * itemPerPage
 	en := pageNum * itemPerPage
-	this.sqlDB.Where("ID > ? AND ID <= ?", st, en).Find(&ret)
+	hdl.sqlDB.Preload("Tags").Where("ID > ? AND ID <= ?", st, en).Find(&ret)
 	return &ret
 }
 
 //GetQuestions Get All questions fulfill the conditions given by info
-func (this *DBHandler) GetQuestions(info *Question) *[]Question {
+func (hdl *DBHandler) GetQuestions(info *Question) *[]Question {
 	ret := make([]Question, 0)
-	this.sqlDB.Find(&ret)
-	fmt.Println(len(ret))
+	query := hdl.sqlDB
+	if len(info.Name) > 0 {
+		query = query.Where("Name=?", info.Name)
+	}
+	if info.Difficulty > 0 {
+		query = query.Where("Difficulty=?", info.Difficulty)
+	}
+	//Caution!!! Beacuse of the BAD BEHAVIOUR appears when OR operation is performed,
+	//DO NOT QUERY OTHER CONDITIONS WITH TAGS!!!
+	if len(info.Tags) > 0 {
+		query = query.Joins("JOIN question_tags ON questions.id=question_tags.question_id")
+		query = query.Where("tag_name=?", info.Tags[0].Name)
+		for i := 1; i < len(info.Tags); i++ {
+			query = query.Or("tag_name=?", info.Tags[i].Name)
+		}
+	}
+	query.Find(&ret)
 	return &ret
 }
 
 //GetStatusByPage Get All status
-func (this *DBHandler) GetStatusByPage(pageNum uint, itemPerPage uint) *[]Status {
+func (hdl *DBHandler) GetStatusByPage(pageNum uint64, itemPerPage uint64) *[]Status {
 	ret := make([]Status, 0)
 	st := (pageNum - 1) * itemPerPage
 	en := pageNum * itemPerPage
-	this.sqlDB.Where("ID > ? AND ID <= ?", st, en).Find(&ret)
+	hdl.sqlDB.Where("ID > ? AND ID <= ?", st, en).Order("ID DESC").Find(&ret)
 	return &ret
 }
 
 //GetStatus Get All status fulfill the conditions given by info
-func (this *DBHandler) GetStatus(info *Status) *[]Status {
+func (hdl *DBHandler) GetStatus(info *Status) *[]Status {
 	ret := make([]Status, 0)
-	this.sqlDB.Find(&ret)
-	fmt.Println(len(ret))
+	query := hdl.sqlDB
+	if info.QuestionID > 0 {
+		fmt.Println("NOT ZERO")
+		query = query.Where("question_id=?", info.QuestionID)
+	}
+	if info.UserID > 0 {
+		query = query.Where("user_id=?", info.UserID)
+	}
+	query.Find(&ret)
 	return &ret
 }

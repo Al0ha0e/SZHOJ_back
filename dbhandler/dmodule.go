@@ -11,7 +11,7 @@ type Question struct {
 	ID          uint   `gorm:"primary_key" json:"id"`
 	Name        string `gorm:"type:varchar(15);" json:"name"`
 	Creator     uint   `json:"creator"`
-	Difficulty  uint   `json:"difficulty" `
+	Difficulty  uint   `json:"difficulty"`
 	TotalCount  uint   `json:"totCnt" `
 	AcceptCount uint   `json:"acCnt" `
 	TimeLimit   uint   `json:"timeLimit" `
@@ -34,15 +34,15 @@ type User struct {
 
 //Status status structure
 type Status struct {
-	ID            uint
-	QuestionID    uint
-	UserID        uint
-	CommitTime    time.Time
-	State         uint
-	RunningTime   uint
-	RunningMemory uint
+	ID            uint      `json:"id"`
+	QuestionID    uint      `json:"qid"`
+	UserID        uint      `json:"uid"`
+	CommitTime    time.Time `json:"commitTime"`
+	State         uint      `json:"state"`
+	RunningTime   uint      `json:"time"`
+	RunningMemory uint      `json:"memory"`
 
-	TotalContestStatus []ContestStatus `gorm:"ForeignKey:StatusID"`
+	TotalContestStatus []ContestStatus `gorm:"ForeignKey:StatusID" json:"-"`
 }
 
 //Tag tag structure

@@ -1,6 +1,7 @@
 package dbhandler
 
 import (
+	"fmt"
 	"testing"
 	"time"
 )
@@ -15,16 +16,16 @@ func TestInitDBHandler(t *testing.T) {
 }
 
 func TestAddQuestion(t *testing.T) {
-	tags := []Tag{Tag{"a"},Tag{"b"}}
+	tags := []Tag{Tag{"a"}, Tag{"c"}}
 	qs := Question{
-		Name:        "B+C Problem",
+		Name:        "中文测试",
 		Creator:     1001,
-		Difficulty:  1,
+		Difficulty:  10,
 		TotalCount:  10,
 		AcceptCount: 9,
 		TimeLimit:   1000,
 		MemoryLimit: 1024,
-		Tags: ,
+		Tags:        tags,
 	}
 	hd := GetDBHandler()
 	err := hd.InitDBHandler()
@@ -36,8 +37,8 @@ func TestAddQuestion(t *testing.T) {
 
 func TestAddStatus(t *testing.T) {
 	st := Status{
-		QuestionID:    1001,
-		UserID:        50,
+		QuestionID:    1004,
+		UserID:        10,
 		CommitTime:    time.Now(),
 		State:         1,
 		RunningTime:   800,
@@ -57,8 +58,16 @@ func TestGetQuestions(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	sq := hd.GetQuestions(&Question{})
-	t.Log((*sq)[0].Name)
+	cond := &Question{
+		//Name: "中文测试",
+		//Difficulty: 10,
+		Tags: []Tag{Tag{Name: "c"}, Tag{Name: "b"}},
+	}
+	sq := hd.GetQuestions(cond)
+	for _, val := range *sq {
+		fmt.Println(val.ID)
+	}
+	//t.Log((*sq)[0].Name)
 }
 
 func TestGetQuestionsByPage(t *testing.T) {
@@ -73,4 +82,21 @@ func TestGetQuestionsByPage(t *testing.T) {
 	t.Log((*sq)[0].ID)
 	sq = hd.GetQuestionsByPage(3, 1)
 	t.Log((*sq)[0].Name)
+}
+
+func TestGetStatus(t *testing.T) {
+	hd := GetDBHandler()
+	err := hd.InitDBHandler()
+	if err != nil {
+		t.Error(err)
+	}
+	cond := &Status{
+		QuestionID: 104,
+		UserID:     10,
+	}
+	sq := hd.GetStatus(cond)
+	for _, val := range *sq {
+		fmt.Println(val.ID, val.QuestionID, val.UserID)
+	}
+	//t.Log((*sq)[0].Name)
 }

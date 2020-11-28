@@ -17,16 +17,18 @@ func GetBackServer() *BackServer {
 }
 
 //Init init BackServer
-func (this *BackServer) Init() error {
-	this.handler = dbhandler.GetDBHandler()
-	err := this.handler.InitDBHandler()
-	this.server = gin.Default()
-	this.server.GET("/pgquest", this.getQuestionsByPage)
-	this.server.POST("/questions", this.getOrSetQuestions)
+func (bs *BackServer) Init() error {
+	bs.handler = dbhandler.GetDBHandler()
+	err := bs.handler.InitDBHandler()
+	bs.server = gin.Default()
+	bs.server.GET("/pgquest", bs.getQuestionsByPage)
+	bs.server.GET("/pgstatus", bs.getStatusByPage)
+	bs.server.POST("/questions", bs.getOrSetQuestions)
+	bs.server.POST("/status", bs.getOrSetStatus)
 	return err
 }
 
 //Run Start BackServer
-func (this *BackServer) Run() {
-	this.server.Run(":8060")
+func (bs *BackServer) Run() {
+	bs.server.Run(":8060")
 }
