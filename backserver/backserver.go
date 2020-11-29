@@ -31,6 +31,7 @@ func (bs *BackServer) Init() error {
 	bs.server.Use(cors.New(config))
 
 	bs.server.GET("/pgquest", bs.getQuestionsByPage)
+	bs.server.GET("/quesdesc", bs.getQuestionDesc)
 	bs.server.GET("/pgstatus", bs.getStatusByPage)
 	bs.server.GET("/ministatus", bs.getMiniStatus)
 	bs.server.POST("/questions", bs.getQuestions)

@@ -1,6 +1,7 @@
 package dbhandler
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -38,12 +39,14 @@ func (q *Question) PrepareForCreation(db *DBHandler, desc *[]byte, code *[]byte,
 
 //AfterCreate Call back after create
 func (q *Question) AfterCreate() error {
+	fmt.Println("AFTER")
 	err := q.db.addQuestionFiles(q.ID, q.desc, q.code, q.data)
 	if err != nil {
 		q.Success = false
 		return err
 	}
 	q.Success = true
+	return nil
 }
 
 //User user structure

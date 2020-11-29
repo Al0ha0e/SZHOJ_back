@@ -16,6 +16,16 @@ func (hdl *DBHandler) addQuestionFiles(id uint, desc *[]byte, code *[]byte, data
 	return err
 }
 
+//GetQuestionDesc get description
+func (hdl *DBHandler) GetQuestionDesc(id uint64) ([]byte, error) {
+	strid := strconv.Itoa(int(id))
+	desc, err := hdl.kvDB.Get([]byte("desc_"+strid), nil)
+	if err != nil {
+		return nil, err
+	}
+	return desc, nil
+}
+
 //AddKV Add question/code values
 func (hdl *DBHandler) AddKV(key []byte, value []byte) error {
 	err := hdl.kvDB.Put(key, value, nil)
