@@ -74,8 +74,9 @@ func (hdl *DBHandler) AddStatus(s *Status) {
 	hdl.sqlDB.Create(s)
 }
 
+//UpdataStatus update status
 func (hdl *DBHandler) UpdataStatus(s *Status) {
-	//
+	hdl.sqlDB.Save(s)
 }
 
 // func (this *DBHandler) GetQuestion(info *Question) error {

@@ -3,16 +3,11 @@ package scheduler
 import (
 	"encoding/json"
 	"net"
+	"sync"
 
 	"github.com/Al0ha0e/SZHOJ_back/backserver"
 	"github.com/Al0ha0e/SZHOJ_back/dbhandler"
 )
-
-//TaskToCommit strcture to server
-type TaskToCommit struct {
-	Status *dbhandler.Status
-	Code   *[]byte
-}
 
 type taskInfo struct {
 	status *dbhandler.Status
@@ -27,9 +22,9 @@ type workerInfo struct {
 type Job struct {
 	QuestionID  uint   `json:"qid"`
 	Data        string `json:"data"`
-	UserCode    string `json"ucode"`
-	TimeLimit   string `timeLimit`
-	MemoryLimit string `memoryLimit`
+	UserCode    string `json:"ucode"`
+	TimeLimit   string `json:"timeLimit"`
+	MemoryLimit string `json:"memoryLimit"`
 }
 
 type workerStatus struct {
@@ -42,13 +37,15 @@ type workerStatus struct {
 
 //Scheduler schedule judger nodes
 type Scheduler struct {
-	CommitChan   chan *TaskToCommit
-	udpChan      chan *workerStatus
-	workers      map[string]*workerInfo
-	pendingTask  *taskInfo
-	runningTask  map[string]*taskInfo
-	masterServer *net.UDPConn
-	backend      *backserver.BackServer
+	CommitChan      chan *dbhandler.Status
+	udpChan         chan *workerStatus
+	workers         map[string]*workerInfo
+	pdQueueLock     sync.Mutex
+	pendingTaskHead *taskInfo
+	pendingTaskTail *taskInfo
+	runningTask     map[string]*taskInfo
+	masterServer    *net.UDPConn
+	backend         *backserver.BackServer
 	//masterClient *net.UDPConn
 }
 
@@ -58,8 +55,9 @@ func GetScheduler() *Scheduler {
 }
 
 //Init init
-func (sch *Scheduler) Init() (err error) {
-	sch.CommitChan = make(chan *TaskToCommit, 10)
+func (sch *Scheduler) Init(back *backserver.BackServer) (err error) {
+	sch.backend = back
+	sch.CommitChan = make(chan *dbhandler.Status, 10)
 	sch.udpChan = make(chan *workerStatus, 10)
 	address, _ := net.ResolveUDPAddr("udp", ":8040")
 	sch.masterServer, err = net.ListenUDP("udp", address)
@@ -92,8 +90,19 @@ func (sch *Scheduler) serveUDP() {
 	}
 }
 
-func (sch *Scheduler) handleTaskCommit(task *TaskToCommit) {
-
+func (sch *Scheduler) handleTaskCommit(task *dbhandler.Status) {
+	tInfo := &taskInfo{
+		status: task,
+	}
+	sch.pdQueueLock.Lock()
+	if sch.pendingTaskHead == nil && sch.pendingTaskTail == nil { //empty
+		sch.pendingTaskHead = tInfo
+		sch.pendingTaskTail = tInfo
+	} else {
+		sch.pendingTaskTail.next = tInfo
+		sch.pendingTaskTail = tInfo
+	}
+	sch.pdQueueLock.Unlock()
 }
 
 func (sch *Scheduler) handleWorkerStatus(status *workerStatus) {
@@ -103,13 +112,15 @@ func (sch *Scheduler) handleWorkerStatus(status *workerStatus) {
 		_, ok := sch.workers[workerID]
 		if ok {
 			//update worker
-			if sch.pendingTask != nil {
+			if sch.pendingTaskHead != nil {
 				_, running := sch.runningTask[workerID]
 				if running {
 					return
 				}
-				task := sch.pendingTask
-				sch.pendingTask = sch.pendingTask.next
+				sch.pdQueueLock.Lock()
+				task := sch.pendingTaskHead
+				sch.pendingTaskHead = sch.pendingTaskHead.next
+				sch.pdQueueLock.Unlock()
 				sch.runningTask[workerID] = task
 				job := Job{QuestionID: task.status.ID}
 				jobJSON, _ := json.Marshal(job)
@@ -134,7 +145,7 @@ func (sch *Scheduler) handleWorkerStatus(status *workerStatus) {
 		task.status.RunningTime = status.Time
 		task.status.RunningMemory = status.Memory
 		task.status.State = status.State
-		//WRITE TO DB
+		sch.backend.AddJudgeOutcome(task.status)
 	}
 }
 

@@ -7,12 +7,11 @@ import (
 	"time"
 
 	"github.com/Al0ha0e/SZHOJ_back/dbhandler"
-	"github.com/Al0ha0e/SZHOJ_back/scheduler"
 	"github.com/gin-gonic/gin"
 )
 
-func (bs *BackServer) commitToScheduler(code *[]byte, status *dbhandler.Status) {
-	bs.jobScheduler.CommitChan <- &scheduler.TaskToCommit{Code: code, Status: status}
+func (bs *BackServer) commitToScheduler(status *dbhandler.Status) {
+	bs.jobScheduler.CommitChan <- status
 }
 
 func (bs *BackServer) commitAnswer(c *gin.Context) {
@@ -51,8 +50,9 @@ func (bs *BackServer) commitAnswer(c *gin.Context) {
 		QuestionID: commitInfo.QuestionID,
 		UserID:     commitInfo.ID,
 		CommitTime: time.Now(),
+		Code:       &code,
 	}
 	bs.handler.AddStatus(status)
-	go bs.commitToScheduler(&code, status)
+	go bs.commitToScheduler(status)
 	c.String(http.StatusOK, "commit success")
 }

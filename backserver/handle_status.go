@@ -53,3 +53,8 @@ func (bs *BackServer) getMiniStatus(c *gin.Context) {
 		c.JSON(http.StatusOK, *ret)
 	}
 }
+
+//AddJudgeOutcome scheduler add a judge outcome
+func (bs *BackServer) AddJudgeOutcome(status *dbhandler.Status) {
+	bs.handler.UpdataStatus(status)
+}

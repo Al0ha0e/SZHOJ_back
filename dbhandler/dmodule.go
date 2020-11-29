@@ -70,13 +70,13 @@ type Status struct {
 
 	TotalContestStatus []ContestStatus `gorm:"ForeignKey:StatusID" json:"-"`
 
-	code *[]byte    `gorm:"-" json:"-"`
+	Code *[]byte    `gorm:"-" json:"-"`
 	db   *DBHandler `gorm:"-" json:"-"`
 }
 
 //AfterCreate Call back after create
 func (s *Status) AfterCreate() error {
-	err := s.db.addCommitCode(s.ID, s.code)
+	err := s.db.addCommitCode(s.ID, s.Code)
 	return err
 }
 
