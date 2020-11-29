@@ -30,8 +30,9 @@ func (bs *BackServer) Init() error {
 	config.AllowHeaders = []string{"tus-resumable", "upload-length", "upload-metadata", "cache-control", "x-requested-with", "*"} //允许的Header
 	bs.server.Use(cors.New(config))
 
+	bs.server.GET("/question", bs.getQuesionByID)
 	bs.server.GET("/pgquest", bs.getQuestionsByPage)
-	bs.server.GET("/quesdesc", bs.getQuestionDesc)
+	bs.server.GET("/quedesc", bs.getQuestionDesc)
 	bs.server.GET("/pgstatus", bs.getStatusByPage)
 	bs.server.GET("/ministatus", bs.getMiniStatus)
 	bs.server.POST("/questions", bs.getQuestions)

@@ -11,6 +11,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func (bs *BackServer) getQuesionByID(c *gin.Context) {
+	qids := c.DefaultQuery("qid", "0")
+	qid, err := strconv.ParseUint(qids, 0, 32)
+	if err != nil {
+		c.String(http.StatusBadRequest, "bad format")
+	}
+	ret := bs.handler.GetQuestionByID(qid)
+	if ret == nil {
+		c.String(http.StatusNotFound, "no such page")
+	} else {
+		c.JSON(http.StatusOK, *ret)
+	}
+}
+
 func (bs *BackServer) getQuestionsByPage(c *gin.Context) {
 	fmt.Println("HEAR")
 	pg := c.DefaultQuery("pg", "1")

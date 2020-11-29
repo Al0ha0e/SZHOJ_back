@@ -56,6 +56,19 @@ func TestAddStatus(t *testing.T) {
 	hd.AddStatus(&st)
 }
 
+func TestGetQuestionByID(t *testing.T) {
+	hd := GetDBHandler()
+	err := hd.InitDBHandler()
+	if err != nil {
+		t.Error(err)
+	}
+	sq := hd.GetQuestionByID(1)
+	if sq == nil {
+		t.Error("NOT FOUND")
+	}
+	t.Log(sq.Name)
+}
+
 func TestGetQuestions(t *testing.T) {
 	hd := GetDBHandler()
 	err := hd.InitDBHandler()

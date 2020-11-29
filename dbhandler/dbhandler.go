@@ -79,6 +79,13 @@ func (hdl *DBHandler) AddStatus(s *Status) {
 // 	return nil
 // }
 
+//GetQuestionCnt get count
+func (hdl *DBHandler) GetQuestionCnt() uint {
+	var ret uint
+	hdl.sqlDB.Table("questions").Count(&ret)
+	return ret
+}
+
 //GetQuestionsByPage Get All questions
 func (hdl *DBHandler) GetQuestionsByPage(pageNum uint64, itemPerPage uint64) *[]Question {
 	ret := make([]Question, 0)
@@ -88,10 +95,20 @@ func (hdl *DBHandler) GetQuestionsByPage(pageNum uint64, itemPerPage uint64) *[]
 	return &ret
 }
 
+//GetQuestionByID get by id
+func (hdl *DBHandler) GetQuestionByID(id uint64) *Question {
+	ret := &Question{ID: uint(id)}
+	if hdl.sqlDB.NewRecord(ret) {
+		return nil
+	}
+	hdl.sqlDB.Preload("Tags").First(ret, id)
+	return ret
+}
+
 //GetQuestions Get All questions fulfill the conditions given by info
 func (hdl *DBHandler) GetQuestions(info *Question) *[]Question {
 	ret := make([]Question, 0)
-	query := hdl.sqlDB
+	query := hdl.sqlDB.Preload("Tags")
 	if len(info.Name) > 0 {
 		query = query.Where("Name=?", info.Name)
 	}
@@ -131,7 +148,7 @@ func (hdl *DBHandler) GetStatus(info *Status) *[]Status {
 	if info.UserID > 0 {
 		query = query.Where("user_id=?", info.UserID)
 	}
-	query.Find(&ret)
+	query.Order("ID DESC").Find(&ret)
 	return &ret
 }
 
