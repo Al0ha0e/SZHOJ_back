@@ -6,6 +6,16 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
+//GetJudgeData Get data for judger
+func (hdl *DBHandler) GetJudgeData(id uint) (*[]byte, error) {
+	strid := strconv.Itoa(int(id))
+	data, err := hdl.kvDB.Get([]byte("data_"+strid), nil)
+	if err != nil {
+		return nil, err
+	}
+	return &data, nil
+}
+
 func (hdl *DBHandler) addQuestionFiles(id uint, desc *[]byte, code *[]byte, data *[]byte) error {
 	strid := strconv.Itoa(int(id))
 	batch := new(leveldb.Batch)
@@ -26,8 +36,8 @@ func (hdl *DBHandler) GetQuestionDesc(id uint64) ([]byte, error) {
 	return desc, nil
 }
 
-//AddKV Add question/code values
-func (hdl *DBHandler) AddKV(key []byte, value []byte) error {
-	err := hdl.kvDB.Put(key, value, nil)
-	return err
-}
+// //AddKV Add question/code values
+// func (hdl *DBHandler) AddKV(key []byte, value []byte) error {
+// 	err := hdl.kvDB.Put(key, value, nil)
+// 	return err
+// }

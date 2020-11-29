@@ -2,14 +2,16 @@ package backserver
 
 import (
 	"github.com/Al0ha0e/SZHOJ_back/dbhandler"
+	"github.com/Al0ha0e/SZHOJ_back/scheduler"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 //BackServer backend server
 type BackServer struct {
-	server  *gin.Engine
-	handler *dbhandler.DBHandler
+	server       *gin.Engine
+	handler      *dbhandler.DBHandler
+	jobScheduler *scheduler.Scheduler
 }
 
 //GetBackServer Get a backserver instance
