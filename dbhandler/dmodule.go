@@ -19,6 +19,31 @@ type Question struct {
 
 	TotalStatus []Status `gorm:"ForeignKey:QuestionID" json:"-"`
 	Tags        []Tag    `gorm:"many2many:question_tags;" json:"tags" `
+
+	//for db create transaction
+	Success bool       `gorm:"-" json:"-"`
+	desc    *[]byte    `gorm:"-" json:"-"`
+	code    *[]byte    `gorm:"-" json:"-"`
+	data    *[]byte    `gorm:"-" json:"-"`
+	db      *DBHandler `gorm:"-" json:"-"`
+}
+
+//PrepareForCreate set essential values before creation
+func (q *Question) PrepareForCreation(db *DBHandler, desc *[]byte, code *[]byte, data *[]byte) {
+	q.db = db
+	q.desc = desc
+	q.code = code
+	q.data = data
+}
+
+//AfterCreate Call back after create
+func (q *Question) AfterCreate() error {
+	err := q.db.addQuestionFiles(q.ID, q.desc, q.code, q.data)
+	if err != nil {
+		q.Success = false
+		return err
+	}
+	q.Success = true
 }
 
 //User user structure
@@ -45,7 +70,7 @@ type Status struct {
 	TotalContestStatus []ContestStatus `gorm:"ForeignKey:StatusID" json:"-"`
 }
 
-//MinimumStatus for single user
+//MiniStatus for single user
 type MiniStatus struct {
 	ID         uint `json:"id"`
 	QuestionID uint `json:"qid"`

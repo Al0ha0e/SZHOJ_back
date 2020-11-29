@@ -33,9 +33,16 @@ func (bs *BackServer) Init() error {
 	bs.server.GET("/pgquest", bs.getQuestionsByPage)
 	bs.server.GET("/pgstatus", bs.getStatusByPage)
 	bs.server.GET("/ministatus", bs.getMiniStatus)
-	bs.server.POST("/questions", bs.getOrSetQuestions)
+	bs.server.POST("/questions", bs.getQuestions)
 	bs.server.POST("/status", bs.getOrSetStatus)
+	bs.server.POST("/upquestion", bs.uploadQuestion)
+	bs.server.POST("/upanswer", bs.commitAnswer)
 	return err
+}
+
+//Dispose Release Resources when shut down
+func (bs *BackServer) Dispose() {
+	bs.handler.Dispose()
 }
 
 //Run Start BackServer

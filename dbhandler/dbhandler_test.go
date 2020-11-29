@@ -32,7 +32,11 @@ func TestAddQuestion(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	hd.AddQuestion(&qs)
+	id := hd.AddQuestion(&qs)
+	if id == 0 {
+		t.Error("BAD ID")
+	}
+	fmt.Println(id)
 }
 
 func TestAddStatus(t *testing.T) {

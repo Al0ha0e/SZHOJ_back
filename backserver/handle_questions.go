@@ -1,7 +1,9 @@
 package backserver
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 
@@ -26,7 +28,7 @@ func (bs *BackServer) getQuestionsByPage(c *gin.Context) {
 	}
 }
 
-func (bs *BackServer) getOrSetQuestions(c *gin.Context) {
+func (bs *BackServer) getQuestions(c *gin.Context) {
 	qInfo := dbhandler.Question{}
 	if err := c.ShouldBind(&qInfo); err == nil {
 		fmt.Println(qInfo.Name, qInfo.ID, qInfo.Tags)
@@ -47,4 +49,46 @@ func (bs *BackServer) getOrSetQuestions(c *gin.Context) {
 	} else {
 		c.String(http.StatusNotFound, `invalid form`)
 	}
+}
+
+func (bs *BackServer) uploadQuestion(c *gin.Context) {
+	err := c.Request.ParseMultipartForm(16 << 10) //16kb
+	if err != nil {
+		c.String(http.StatusBadRequest, "form error: too large")
+		return
+	}
+	formdata := c.Request.MultipartForm
+
+	qinfoJSON := formdata.Value["qinfo"][0]
+	var qinfo dbhandler.Question
+	err = json.Unmarshal([]byte(qinfoJSON), &qinfo)
+	if err != nil {
+		c.String(http.StatusBadRequest, "form error: bad format")
+		return
+	}
+
+	//hadle files
+	files := formdata.File["file"]
+	qfiles := make([]*[]byte, 3)
+	for i, fh := range files {
+		file, err := fh.Open()
+		if err != nil {
+			c.String(http.StatusBadRequest, "file error: cannot open file")
+			return
+		}
+		defer file.Close()
+		content, err := ioutil.ReadAll(file)
+		if err != nil {
+			c.String(http.StatusBadRequest, "file error: cannot read file")
+			return
+		}
+		qfiles[i] = &content
+	}
+	qinfo.PrepareForCreation(bs.handler, qfiles[0], qfiles[1], qfiles[2])
+	//it is a transaction
+	bs.handler.AddQuestion(&qinfo)
+	if !qinfo.Success {
+		c.String(http.StatusInternalServerError, "upload failed")
+	}
+	c.String(http.StatusOK, "upload success")
 }

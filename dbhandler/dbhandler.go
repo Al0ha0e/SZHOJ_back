@@ -5,6 +5,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql" //mysql driver
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 const dbstr = "ojtest:weakpassword@(127.0.0.1:3307)/oj?charset=utf8&parseTime=True&loc=Local"
@@ -12,6 +13,7 @@ const dbstr = "ojtest:weakpassword@(127.0.0.1:3307)/oj?charset=utf8&parseTime=Tr
 //DBHandler handler db operations SQL and leveldb
 type DBHandler struct {
 	sqlDB *gorm.DB
+	kvDB  *leveldb.DB
 }
 
 //GetDBHandler Get a instance of DBHandler
@@ -21,6 +23,12 @@ func GetDBHandler() *DBHandler {
 
 //InitDBHandler Init DBHandler
 func (hdl *DBHandler) InitDBHandler() (err error) {
+
+	hdl.kvDB, err = leveldb.OpenFile("./db", nil)
+	if err != nil {
+		return err
+	}
+
 	hdl.sqlDB, err = gorm.Open("mysql", dbstr)
 	if err != nil {
 		return err
@@ -49,9 +57,16 @@ func (hdl *DBHandler) InitDBHandler() (err error) {
 	return nil
 }
 
+//Dispose Release Resources when shut down
+func (hdl *DBHandler) Dispose() {
+	hdl.sqlDB.Close()
+	hdl.kvDB.Close()
+}
+
 //AddQuestion AddQuestion
-func (hdl *DBHandler) AddQuestion(q *Question) {
+func (hdl *DBHandler) AddQuestion(q *Question) uint {
 	hdl.sqlDB.Create(q)
+	return q.ID
 }
 
 //AddStatus AddStatus

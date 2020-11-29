@@ -8,8 +8,8 @@ import (
 
 func main() {
 	server := backserver.GetBackServer()
-	fmt.Println("OK1", server == nil)
 	err := server.Init()
 	fmt.Println("OK2", err)
 	server.Run()
+	defer server.Dispose()
 }
