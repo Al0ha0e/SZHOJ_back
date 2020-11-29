@@ -6,6 +6,21 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
+func (hdl *DBHandler) addQuestionFiles(id uint, desc *[]byte, data *[]byte) error {
+	strid := strconv.Itoa(int(id))
+	batch := new(leveldb.Batch)
+	batch.Put([]byte("desc_"+strid), *desc)
+	batch.Put([]byte("data_"+strid), *data)
+	err := hdl.kvDB.Write(batch, nil)
+	return err
+}
+
+func (hdl *DBHandler) addCommitCode(id uint, code *[]byte) error {
+	strid := strconv.Itoa(int(id))
+	err := hdl.kvDB.Put([]byte("code_"+strid), *code, nil)
+	return err
+}
+
 //GetJudgeData Get data for judger
 func (hdl *DBHandler) GetJudgeData(id uint) (*[]byte, error) {
 	strid := strconv.Itoa(int(id))
@@ -14,16 +29,6 @@ func (hdl *DBHandler) GetJudgeData(id uint) (*[]byte, error) {
 		return nil, err
 	}
 	return &data, nil
-}
-
-func (hdl *DBHandler) addQuestionFiles(id uint, desc *[]byte, code *[]byte, data *[]byte) error {
-	strid := strconv.Itoa(int(id))
-	batch := new(leveldb.Batch)
-	batch.Put([]byte("desc_"+strid), *desc)
-	batch.Put([]byte("code_"+strid), *code)
-	batch.Put([]byte("data_"+strid), *data)
-	err := hdl.kvDB.Write(batch, nil)
-	return err
 }
 
 //GetQuestionDesc get description

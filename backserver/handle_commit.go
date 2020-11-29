@@ -12,7 +12,7 @@ import (
 )
 
 func (bs *BackServer) commitToScheduler(code *[]byte, status *dbhandler.Status) {
-	bs.jobScheduler.CommitChan <- scheduler.TaskToCommit{Code: code, Status: status}
+	bs.jobScheduler.CommitChan <- &scheduler.TaskToCommit{Code: code, Status: status}
 }
 
 func (bs *BackServer) commitAnswer(c *gin.Context) {

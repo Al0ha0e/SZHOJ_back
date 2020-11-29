@@ -24,23 +24,21 @@ type Question struct {
 	//for db create transaction
 	Success bool       `gorm:"-" json:"-"`
 	desc    *[]byte    `gorm:"-" json:"-"`
-	code    *[]byte    `gorm:"-" json:"-"`
 	data    *[]byte    `gorm:"-" json:"-"`
 	db      *DBHandler `gorm:"-" json:"-"`
 }
 
 //PrepareForCreate set essential values before creation
-func (q *Question) PrepareForCreation(db *DBHandler, desc *[]byte, code *[]byte, data *[]byte) {
+func (q *Question) PrepareForCreation(db *DBHandler, desc *[]byte, data *[]byte) {
 	q.db = db
 	q.desc = desc
-	q.code = code
 	q.data = data
 }
 
 //AfterCreate Call back after create
 func (q *Question) AfterCreate() error {
 	fmt.Println("AFTER")
-	err := q.db.addQuestionFiles(q.ID, q.desc, q.code, q.data)
+	err := q.db.addQuestionFiles(q.ID, q.desc, q.data)
 	if err != nil {
 		q.Success = false
 		return err
@@ -71,6 +69,15 @@ type Status struct {
 	RunningMemory uint      `json:"memory"`
 
 	TotalContestStatus []ContestStatus `gorm:"ForeignKey:StatusID" json:"-"`
+
+	code *[]byte    `gorm:"-" json:"-"`
+	db   *DBHandler `gorm:"-" json:"-"`
+}
+
+//AfterCreate Call back after create
+func (s *Status) AfterCreate() error {
+	err := s.db.addCommitCode(s.ID, s.code)
+	return err
 }
 
 //MiniStatus for single user
