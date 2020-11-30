@@ -21,8 +21,19 @@ func GetBackServer() *BackServer {
 
 //Init init BackServer
 func (bs *BackServer) Init() error {
+	bs.jobScheduler = scheduler.GetScheduler()
+
 	bs.handler = dbhandler.GetDBHandler()
 	err := bs.handler.InitDBHandler()
+	if err != nil {
+		return err
+	}
+
+	err = bs.jobScheduler.Init(bs.handler)
+	if err != nil {
+		return err
+	}
+	bs.jobScheduler.Start()
 
 	bs.server = gin.Default()
 

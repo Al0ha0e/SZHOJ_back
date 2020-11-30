@@ -2,6 +2,7 @@ package backserver
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -42,6 +43,7 @@ func (bs *BackServer) commitAnswer(c *gin.Context) {
 		return
 	}
 	code, err := ioutil.ReadAll(file)
+	fmt.Println("CODE ", string(code))
 	if err != nil {
 		c.String(http.StatusBadRequest, "file error: cannot read file")
 		return
@@ -50,8 +52,8 @@ func (bs *BackServer) commitAnswer(c *gin.Context) {
 		QuestionID: commitInfo.QuestionID,
 		UserID:     commitInfo.ID,
 		CommitTime: time.Now(),
-		Code:       &code,
 	}
+	status.PrepareForCreation(bs.handler, &code)
 	bs.handler.AddStatus(status)
 	go bs.commitToScheduler(status)
 	c.String(http.StatusOK, "commit success")

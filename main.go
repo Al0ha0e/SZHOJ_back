@@ -9,7 +9,11 @@ import (
 func main() {
 	server := backserver.GetBackServer()
 	err := server.Init()
-	fmt.Println("OK2", err)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	server.Run()
 	defer server.Dispose()
 }

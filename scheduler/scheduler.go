@@ -2,10 +2,11 @@ package scheduler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net"
+	"strconv"
 	"sync"
 
-	"github.com/Al0ha0e/SZHOJ_back/backserver"
 	"github.com/Al0ha0e/SZHOJ_back/dbhandler"
 )
 
@@ -21,7 +22,8 @@ type workerInfo struct {
 //Job job sent to worker
 type Job struct {
 	QuestionID  uint   `json:"qid"`
-	Data        string `json:"data"`
+	DataIn      string `json:"datain"`
+	DataOut     string `json:"dataout"`
 	UserCode    string `json:"ucode"`
 	TimeLimit   string `json:"timeLimit"`
 	MemoryLimit string `json:"memoryLimit"`
@@ -31,7 +33,7 @@ type workerStatus struct {
 	QuestionID int          `json:"qid"`
 	Time       uint         `json:"time"`
 	Memory     uint         `json:"memory"`
-	State      uint         `json:"state"`
+	State      int          `json:"state"`
 	worker     *net.UDPAddr `json:"-"`
 }
 
@@ -45,7 +47,7 @@ type Scheduler struct {
 	pendingTaskTail *taskInfo
 	runningTask     map[string]*taskInfo
 	masterServer    *net.UDPConn
-	backend         *backserver.BackServer
+	backendDB       *dbhandler.DBHandler
 	//masterClient *net.UDPConn
 }
 
@@ -55,11 +57,16 @@ func GetScheduler() *Scheduler {
 }
 
 //Init init
-func (sch *Scheduler) Init(back *backserver.BackServer) (err error) {
-	sch.backend = back
+func (sch *Scheduler) Init(back *dbhandler.DBHandler) (err error) {
+	sch.workers = make(map[string]*workerInfo)
+	sch.runningTask = make(map[string]*taskInfo)
+	sch.backendDB = back
 	sch.CommitChan = make(chan *dbhandler.Status, 10)
 	sch.udpChan = make(chan *workerStatus, 10)
-	address, _ := net.ResolveUDPAddr("udp", ":8040")
+	address, err := net.ResolveUDPAddr("udp", ":8040")
+	if err != nil {
+		return err
+	}
 	sch.masterServer, err = net.ListenUDP("udp", address)
 	if err != nil {
 		return err
@@ -69,6 +76,7 @@ func (sch *Scheduler) Init(back *backserver.BackServer) (err error) {
 
 //Start start a node scheduler
 func (sch *Scheduler) Start() {
+	fmt.Println("SCH START")
 	go sch.serve()
 	go sch.serveUDP()
 }
@@ -78,7 +86,7 @@ func (sch *Scheduler) informServer(status *workerStatus) {
 }
 
 func (sch *Scheduler) serveUDP() {
-
+	fmt.Println("START  SERVERUDP")
 	defer sch.masterServer.Close()
 	for {
 		data := make([]byte, 4*1024*1024)
@@ -91,6 +99,7 @@ func (sch *Scheduler) serveUDP() {
 }
 
 func (sch *Scheduler) handleTaskCommit(task *dbhandler.Status) {
+	fmt.Println("COMMIT TASK")
 	tInfo := &taskInfo{
 		status: task,
 	}
@@ -105,10 +114,22 @@ func (sch *Scheduler) handleTaskCommit(task *dbhandler.Status) {
 	sch.pdQueueLock.Unlock()
 }
 
+func (sch *Scheduler) constructJob(qid uint, code *[]byte) *Job {
+	job := &Job{QuestionID: qid, UserCode: string(*code)}
+	datain, dataout, _ := sch.backendDB.GetJudgeData(qid)
+	job.DataIn = string(*datain)
+	job.DataOut = string(*dataout)
+	question := sch.backendDB.GetQuestionByID(uint64(qid))
+	job.TimeLimit = strconv.Itoa(int(question.TimeLimit))
+	job.MemoryLimit = strconv.Itoa(int(question.MemoryLimit))
+	return job
+}
+
 func (sch *Scheduler) handleWorkerStatus(status *workerStatus) {
 	workerID := status.worker.String()
 	if status.QuestionID == 0 {
 		//heartbeat
+		fmt.Println("HEARTBEAT FROM", workerID)
 		_, ok := sch.workers[workerID]
 		if ok {
 			//update worker
@@ -122,7 +143,7 @@ func (sch *Scheduler) handleWorkerStatus(status *workerStatus) {
 				sch.pendingTaskHead = sch.pendingTaskHead.next
 				sch.pdQueueLock.Unlock()
 				sch.runningTask[workerID] = task
-				job := Job{QuestionID: task.status.ID}
+				job := sch.constructJob(task.status.QuestionID, task.status.Code)
 				jobJSON, _ := json.Marshal(job)
 				conn, _ := net.Dial("udp", workerID)
 				defer conn.Close()
@@ -135,26 +156,32 @@ func (sch *Scheduler) handleWorkerStatus(status *workerStatus) {
 
 	} else if status.QuestionID == -1 {
 		//connect
+		fmt.Println("CONNECT", workerID)
 		sch.workers[workerID] = &workerInfo{ip: workerID}
 	} else {
 		task, ok := sch.runningTask[workerID]
-		if !ok {
+		fmt.Println("COMMIT", workerID, status.QuestionID, status.State, status.Time, status.Memory)
+		if !ok || task.status.QuestionID != uint(status.QuestionID) {
+			fmt.Println("BAD")
 			return
 		}
 		delete(sch.runningTask, workerID)
 		task.status.RunningTime = status.Time
 		task.status.RunningMemory = status.Memory
 		task.status.State = status.State
-		sch.backend.AddJudgeOutcome(task.status)
+		sch.backendDB.UpdataStatus(task.status)
 	}
 }
 
 func (sch *Scheduler) serve() {
+	fmt.Println("START SERVE")
 	for {
 		select {
 		case task := <-sch.CommitChan:
+			fmt.Println("BACK COMMIT")
 			sch.handleTaskCommit(task)
 		case status := <-sch.udpChan:
+			fmt.Println("UDP COMMIT")
 			sch.handleWorkerStatus(status)
 		}
 	}

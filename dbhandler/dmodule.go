@@ -24,21 +24,23 @@ type Question struct {
 	//for db create transaction
 	Success bool       `gorm:"-" json:"-"`
 	desc    *[]byte    `gorm:"-" json:"-"`
-	data    *[]byte    `gorm:"-" json:"-"`
+	datain  *[]byte    `gorm:"-" json:"-"`
+	dataout *[]byte    `gorm:"-" json:"-"`
 	db      *DBHandler `gorm:"-" json:"-"`
 }
 
-//PrepareForCreate set essential values before creation
-func (q *Question) PrepareForCreation(db *DBHandler, desc *[]byte, data *[]byte) {
+//PrepareForCreation set essential values before creation
+func (q *Question) PrepareForCreation(db *DBHandler, desc *[]byte, datain *[]byte, dataout *[]byte) {
 	q.db = db
 	q.desc = desc
-	q.data = data
+	q.datain = datain
+	q.dataout = dataout
 }
 
 //AfterCreate Call back after create
 func (q *Question) AfterCreate() error {
 	fmt.Println("AFTER")
-	err := q.db.addQuestionFiles(q.ID, q.desc, q.data)
+	err := q.db.addQuestionFiles(q.ID, q.desc, q.datain, q.dataout)
 	if err != nil {
 		q.Success = false
 		return err
@@ -64,7 +66,7 @@ type Status struct {
 	QuestionID    uint      `json:"qid"`
 	UserID        uint      `json:"uid"`
 	CommitTime    time.Time `json:"commitTime"`
-	State         uint      `json:"state"`
+	State         int       `json:"state"`
 	RunningTime   uint      `json:"time"`
 	RunningMemory uint      `json:"memory"`
 
@@ -74,8 +76,15 @@ type Status struct {
 	db   *DBHandler `gorm:"-" json:"-"`
 }
 
+//PrepareForCreation set essential values before creation
+func (s *Status) PrepareForCreation(db *DBHandler, code *[]byte) {
+	s.db = db
+	s.Code = code
+}
+
 //AfterCreate Call back after create
 func (s *Status) AfterCreate() error {
+	fmt.Println("STATUS SQL OK", string(*s.Code))
 	err := s.db.addCommitCode(s.ID, s.Code)
 	return err
 }

@@ -106,11 +106,11 @@ func (bs *BackServer) uploadQuestion(c *gin.Context) {
 	qinfo.ID = 0
 	//hadle files
 	files := formdata.File["file"]
-	if len(files) != 2 {
+	if len(files) != 3 {
 		c.String(http.StatusBadRequest, "file count mismatch")
 		return
 	}
-	qfiles := make([]*[]byte, 2)
+	qfiles := make([]*[]byte, 3)
 	for i, fh := range files {
 		file, err := fh.Open()
 		if err != nil {
@@ -125,7 +125,7 @@ func (bs *BackServer) uploadQuestion(c *gin.Context) {
 		}
 		qfiles[i] = &content
 	}
-	qinfo.PrepareForCreation(bs.handler, qfiles[0], qfiles[1])
+	qinfo.PrepareForCreation(bs.handler, qfiles[0], qfiles[1], qfiles[2])
 	//it is a transaction
 	fmt.Println("TRANS ", bs.handler.AddQuestion(&qinfo))
 	if !qinfo.Success {
