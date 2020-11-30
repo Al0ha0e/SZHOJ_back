@@ -129,18 +129,23 @@ func (sch *Scheduler) handleWorkerStatus(status *workerStatus) {
 	workerID := status.worker.String()
 	if status.QuestionID == 0 {
 		//heartbeat
-		fmt.Println("HEARTBEAT FROM", workerID)
+		//fmt.Println("HEARTBEAT FROM", workerID)
 		_, ok := sch.workers[workerID]
 		if ok {
 			//update worker
 			if sch.pendingTaskHead != nil {
+				fmt.Println("NOT NULL")
 				_, running := sch.runningTask[workerID]
 				if running {
+					fmt.Println("RUNNING")
 					return
 				}
 				sch.pdQueueLock.Lock()
 				task := sch.pendingTaskHead
 				sch.pendingTaskHead = sch.pendingTaskHead.next
+				if sch.pendingTaskHead == nil {
+					sch.pendingTaskTail = nil
+				}
 				sch.pdQueueLock.Unlock()
 				sch.runningTask[workerID] = task
 				job := sch.constructJob(task.status.QuestionID, task.status.Code)

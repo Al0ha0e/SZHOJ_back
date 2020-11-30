@@ -89,6 +89,7 @@ func (bs *BackServer) getQuestionDesc(c *gin.Context) {
 }
 
 func (bs *BackServer) uploadQuestion(c *gin.Context) {
+	fmt.Println("UPLOAD")
 	err := c.Request.ParseMultipartForm(16 << 10) //16kb
 	if err != nil {
 		c.String(http.StatusBadRequest, "form error: too large")
