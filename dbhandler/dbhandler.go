@@ -63,6 +63,15 @@ func (hdl *DBHandler) Dispose() {
 	hdl.kvDB.Close()
 }
 
+//AddUser Add a user
+func (hdl *DBHandler) AddUser(username, password string) {
+	user := &User{
+		Name:     username,
+		Password: password,
+	}
+	hdl.sqlDB.Create(user)
+}
+
 //AddQuestion AddQuestion
 func (hdl *DBHandler) AddQuestion(q *Question) uint {
 	hdl.sqlDB.Create(q)
@@ -79,10 +88,12 @@ func (hdl *DBHandler) UpdataStatus(s *Status) {
 	hdl.sqlDB.Save(s)
 }
 
-// func (this *DBHandler) GetQuestion(info *Question) error {
-
-// 	return nil
-// }
+//GetUserByName get user by username
+func (hdl *DBHandler) GetUserByName(name string) *User {
+	var user User
+	hdl.sqlDB.Where("name=?", name).First(&user)
+	return &user
+}
 
 //GetQuestionCnt get count
 func (hdl *DBHandler) GetQuestionCnt() uint {

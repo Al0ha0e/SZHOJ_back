@@ -51,8 +51,9 @@ func (q *Question) AfterCreate() error {
 
 //User user structure
 type User struct {
-	gorm.Model
-	Name               string      `gorm:"type:varchar(15);"`
+	ID                 uint        `gorm:"primary_key" json:"id"`
+	Name               string      `gorm:"type:varchar(15);unique" json:"name"`
+	Password           string      `gorm:"type:varchar(15);" json:"password"`
 	TotalStatus        []Status    `gorm:"ForeignKey:UserID"`
 	CreatedQuestions   []Question  `gorm:"ForeignKey:Creator"`
 	AttendedUserGroups []UserGroup `gorm:"many2many:user_usergroups;"`

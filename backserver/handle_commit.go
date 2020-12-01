@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Al0ha0e/SZHOJ_back/dbhandler"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -28,6 +29,11 @@ func (bs *BackServer) commitAnswer(c *gin.Context) {
 	err = json.Unmarshal([]byte(commitJSON), &commitInfo)
 	if err != nil {
 		c.String(http.StatusBadRequest, "form error: bad format")
+		return
+	}
+	session := sessions.Default(c)
+	if session.Get("loggedIn") != "true" || session.Get("userId") != commitInfo.ID {
+		c.String(http.StatusForbidden, "no authority")
 		return
 	}
 	//hadle files

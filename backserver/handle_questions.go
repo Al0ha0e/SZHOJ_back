@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/Al0ha0e/SZHOJ_back/dbhandler"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -49,20 +50,14 @@ func (bs *BackServer) getQuestions(c *gin.Context) {
 	qInfo := dbhandler.Question{}
 	if err := c.ShouldBind(&qInfo); err == nil {
 		fmt.Println(qInfo.Name, qInfo.ID, qInfo.Tags)
-		if qInfo.ID != 0 {
-			fmt.Println("QUERY")
-			qInfo.ID = 0
-			ret := bs.handler.GetQuestions(&qInfo)
-			if len(*ret) < 1 {
-				c.String(http.StatusNotFound, "question not found")
-			} else {
-				c.JSON(http.StatusOK, *ret)
-			}
+		qInfo.ID = 0
+		ret := bs.handler.GetQuestions(&qInfo)
+		if len(*ret) < 1 {
+			c.String(http.StatusNotFound, "question not found")
 		} else {
-			//TODO
-			fmt.Println("INSERT")
-			c.String(http.StatusOK, `insert success`)
+			c.JSON(http.StatusOK, *ret)
 		}
+
 	} else {
 		c.String(http.StatusNotFound, `invalid form`)
 	}
@@ -104,7 +99,16 @@ func (bs *BackServer) uploadQuestion(c *gin.Context) {
 		c.String(http.StatusBadRequest, "form error: bad format")
 		return
 	}
+	if len(qinfo.Name) > 15 || len(qinfo.Name) < 1 {
+		c.String(http.StatusOK, "bad name format")
+		return
+	}
 	qinfo.ID = 0
+	session := sessions.Default(c)
+	if session.Get("loggedIn") != "true" || session.Get("userId") != qinfo.Creator {
+		c.String(http.StatusForbidden, "no authority")
+		return
+	}
 	//hadle files
 	files := formdata.File["file"]
 	if len(files) != 3 {
