@@ -22,6 +22,12 @@ func (hdl *DBHandler) addCommitCode(id uint, code *[]byte) error {
 	return err
 }
 
+//GetCode get code for status
+func (hdl *DBHandler) GetCode(id int) ([]byte, error) {
+	strid := strconv.Itoa(id)
+	return hdl.kvDB.Get([]byte("code_"+strid), nil)
+}
+
 //GetJudgeData Get data for judger
 func (hdl *DBHandler) GetJudgeData(id uint) (*[]byte, *[]byte, error) {
 	strid := strconv.Itoa(int(id))

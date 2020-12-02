@@ -174,3 +174,10 @@ func (hdl *DBHandler) GetMiniStatus(userID uint64) *[]MiniStatus {
 	hdl.sqlDB.Table("statuses").Where("user_id=?", userID).Select("id, question_id, state").Scan(&ret)
 	return &ret
 }
+
+//GetStatusByID get status by id
+func (hdl *DBHandler) GetStatusByID(sid uint64) *Status {
+	ret := &Status{}
+	hdl.sqlDB.First(ret, sid)
+	return ret
+}

@@ -103,6 +103,7 @@ func (bs *BackServer) Init() error {
 	bs.server.GET("/quedesc", bs.getQuestionDesc)
 	bs.server.GET("/pgstatus", bs.getStatusByPage)
 	bs.server.GET("/ministatus", bs.getMiniStatus)
+	bs.server.GET("/singlestatus", bs.getStatusDetail)
 	bs.server.POST("/login", bs.login)
 	bs.server.POST("/register", bs.register)
 	bs.server.POST("/questions", bs.getQuestions)

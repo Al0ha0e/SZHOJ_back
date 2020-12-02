@@ -53,3 +53,15 @@ func (bs *BackServer) getMiniStatus(c *gin.Context) {
 		c.JSON(http.StatusOK, *ret)
 	}
 }
+
+func (bs *BackServer) getStatusDetail(c *gin.Context) {
+	sids := c.DefaultQuery("sid", "0")
+	sid, _ := strconv.ParseUint(sids, 0, 32)
+	status := bs.handler.GetStatusByID(sid)
+	code, _ := bs.handler.GetCode(int(sid))
+	if status.ID == 0 {
+		c.String(http.StatusNotFound, "no such status")
+	} else {
+		c.JSON(http.StatusOK, gin.H{"status": status, "code": code})
+	}
+}
