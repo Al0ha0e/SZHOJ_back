@@ -84,9 +84,11 @@ func (bs *BackServer) Init() error {
 	bs.server.Use(auth())
 
 	bs.server.GET("/question", bs.getQuesionByID)
+	bs.server.GET("/contest", bs.getContestByID)
 	bs.server.GET("/pgquest", bs.getQuestionsByPage)
 	bs.server.GET("/quedesc", bs.getQuestionDesc)
 	bs.server.GET("/pgstatus", bs.getStatusByPage)
+	bs.server.GET("/pgcontest", bs.getContestByPage)
 	bs.server.GET("/ministatus", bs.getMiniStatus)
 	bs.server.GET("/singlestatus", bs.getStatusDetail)
 	bs.server.GET("/usergroup", bs.getUserGroup)
@@ -98,6 +100,7 @@ func (bs *BackServer) Init() error {
 	bs.server.POST("/upanswer", bs.commitAnswer)
 	bs.server.POST("/addgroup", bs.addUserGroup)
 	bs.server.POST("/delgroup", bs.deleteUserGroup)
+	bs.server.POST("/addcontest", bs.addContest)
 	return err
 }
 

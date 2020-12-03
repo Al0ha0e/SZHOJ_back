@@ -102,11 +102,11 @@ type Tag struct {
 
 //UserGroup usergroup structure
 type UserGroup struct {
-	ID       uint   `gorm:"primary_key"`
-	Name     string `gorm:"type:varchar(15);"`
-	Creator  uint
-	Users    []User    `gorm:"many2many:user_usergroups;"`
-	Contests []Contest `gorm:"ForeignKey:UserGroupID"`
+	ID       uint      `gorm:"primary_key" json:"id"`
+	Name     string    `gorm:"type:varchar(15);" json:"name"`
+	Creator  uint      `json:"creator"`
+	Users    []User    `gorm:"many2many:user_usergroups;" json:"users"`
+	Contests []Contest `gorm:"ForeignKey:UserGroupID" json:"-"`
 }
 
 //Contest contest structure
@@ -119,7 +119,7 @@ type Contest struct {
 	Duration    uint      `json:"duration"`
 
 	TotalContestStatus []ContestStatus `gorm:"ForeignKey:ContestID" json:"-"`
-	Questions          []Question      `gorm:"ForeignKey:ContestID" json:"-"`
+	Questions          []Question      `gorm:"ForeignKey:ContestID" json:"questions"`
 }
 
 //ContestStatus status of a contest

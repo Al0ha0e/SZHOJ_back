@@ -16,6 +16,7 @@ func (bs *BackServer) getUserGroup(c *gin.Context) {
 	session := sessions.Default(c)
 	uid := session.Get("userId")
 	attended := c.DefaultQuery("attend", "1")
+	fmt.Println("GET UG", attended)
 	var ug *[]dbhandler.UserGroup
 	if attended == "1" {
 		ug = bs.handler.GetAttendedUserGroups(uid.(uint))
@@ -46,6 +47,11 @@ func parseUserGroup(content string) (*[]dbhandler.User, error) {
 func (bs *BackServer) addUserGroup(c *gin.Context) {
 	session := sessions.Default(c)
 	uid := session.Get("userId")
+	err := c.Request.ParseMultipartForm(16 << 10) //16kb
+	if err != nil {
+		c.String(http.StatusBadRequest, "form error: too large")
+		return
+	}
 	formdata := c.Request.MultipartForm
 	usergroup := &dbhandler.UserGroup{Creator: uid.(uint), Name: formdata.Value["name"][0]}
 	files := formdata.File["file"]
