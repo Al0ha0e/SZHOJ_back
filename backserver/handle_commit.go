@@ -2,7 +2,6 @@ package backserver
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -32,7 +31,8 @@ func (bs *BackServer) commitAnswer(c *gin.Context) {
 		return
 	}
 	session := sessions.Default(c)
-	if session.Get("loggedIn") != "true" || session.Get("userId") != commitInfo.ID {
+	uid := session.Get("userId").(uint)
+	if session.Get("loggedIn") != "true" || uid != commitInfo.ID {
 		c.String(http.StatusForbidden, "no authority")
 		return
 	}
@@ -49,10 +49,26 @@ func (bs *BackServer) commitAnswer(c *gin.Context) {
 		return
 	}
 	code, err := ioutil.ReadAll(file)
-	fmt.Println("CODE ", string(code))
 	if err != nil {
 		c.String(http.StatusBadRequest, "file error: cannot read file")
 		return
+	}
+	question := bs.handler.GetQuestionByID(uint64(commitInfo.QuestionID))
+	cid := question.ContestID
+	if cid != 0 {
+		contest := bs.handler.GetContestByID(uint64(cid))
+		usergroup := bs.handler.GetUserGroupByID(contest.UserGroupID)
+		succ := false
+		for _, usr := range usergroup.Users {
+			if uid == usr.ID {
+				succ = true
+				break
+			}
+		}
+		if !succ {
+			c.String(http.StatusUnauthorized, "no authorize")
+			return
+		}
 	}
 	status := &dbhandler.Status{
 		QuestionID: commitInfo.QuestionID,
@@ -61,6 +77,7 @@ func (bs *BackServer) commitAnswer(c *gin.Context) {
 	}
 	status.PrepareForCreation(bs.handler, &code)
 	bs.handler.AddStatus(status)
+
 	go bs.commitToScheduler(status)
 	c.String(http.StatusOK, "commit success")
 }

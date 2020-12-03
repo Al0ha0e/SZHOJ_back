@@ -89,7 +89,7 @@ func (hdl *DBHandler) AddUserGroup(g *UserGroup) {
 }
 
 //AddContestStatus add
-func (hdl *DBHandler) AddContestStatus(s *Status) {
+func (hdl *DBHandler) AddContestStatus(s *ContestStatus) {
 	hdl.sqlDB.Create(s)
 }
 
@@ -105,7 +105,23 @@ func (hdl *DBHandler) UpdateContestStatus(s *Status) {
 
 //UpdataStatus update status
 func (hdl *DBHandler) UpdataStatus(s *Status) {
-	hdl.sqlDB.Save(s)
+	question := hdl.GetQuestionByID(uint64(s.QuestionID))
+	if question.ContestID != 0 {
+		cStatus := ContestStatus{
+			ContestID:     question.ContestID,
+			QuestionID:    s.QuestionID,
+			UserID:        s.UserID,
+			CommitTime:    s.CommitTime,
+			State:         s.State,
+			RunningTime:   s.RunningTime,
+			RunningMemory: s.RunningMemory,
+		}
+		hdl.sqlDB.Create(cStatus)
+		hdl.sqlDB.Delete(s)
+	} else {
+		hdl.sqlDB.Save(s)
+	}
+
 }
 
 //DeleteUserGroup del
@@ -140,7 +156,7 @@ func (hdl *DBHandler) GetQuestionsByPage(pageNum uint64, itemPerPage uint64) *[]
 	ret := make([]Question, 0)
 	st := (pageNum - 1) * itemPerPage
 	en := pageNum * itemPerPage
-	hdl.sqlDB.Preload("Tags").Where("ID > ? AND ID <= ?", st, en).Find(&ret)
+	hdl.sqlDB.Preload("Tags").Where("ID > ? AND ID <= ? AND ContestID = ?", st, en, 0).Find(&ret)
 	return &ret
 }
 
@@ -157,7 +173,7 @@ func (hdl *DBHandler) GetQuestionByID(id uint64) *Question {
 //GetQuestions Get All questions fulfill the conditions given by info
 func (hdl *DBHandler) GetQuestions(info *Question) *[]Question {
 	ret := make([]Question, 0)
-	query := hdl.sqlDB.Preload("Tags")
+	query := hdl.sqlDB.Preload("Tags").Where("ContestID=?", 0)
 	if len(info.Name) > 0 {
 		query = query.Where("Name=?", info.Name)
 	}
@@ -166,13 +182,13 @@ func (hdl *DBHandler) GetQuestions(info *Question) *[]Question {
 	}
 	//Caution!!! Beacuse of the BAD BEHAVIOUR appears when OR operation is performed,
 	//DO NOT QUERY OTHER CONDITIONS WITH TAGS!!!
-	if len(info.Tags) > 0 {
-		query = query.Joins("JOIN question_tags ON questions.id=question_tags.question_id")
-		query = query.Where("tag_name=?", info.Tags[0].Name)
-		for i := 1; i < len(info.Tags); i++ {
-			query = query.Or("tag_name=?", info.Tags[i].Name)
-		}
-	}
+	// if len(info.Tags) > 0 {
+	// 	query = query.Joins("JOIN question_tags ON questions.id=question_tags.question_id")
+	// 	query = query.Where("tag_name=?", info.Tags[0].Name)
+	// 	for i := 1; i < len(info.Tags); i++ {
+	// 		query = query.Or("tag_name=?", info.Tags[i].Name)
+	// 	}
+	// }
 	query.Find(&ret)
 	return &ret
 }
@@ -227,7 +243,7 @@ func (hdl *DBHandler) GetContestByPage(pageNum uint64, itemPerPage uint64) *[]Co
 //GetContestByID get contest
 func (hdl *DBHandler) GetContestByID(cid uint64) *Contest {
 	ret := &Contest{}
-	hdl.sqlDB.Preload("questions").First(ret, cid)
+	hdl.sqlDB.Preload("Questions").First(ret, cid)
 	return ret
 }
 
@@ -248,7 +264,7 @@ func (hdl *DBHandler) GetTotalContestStatus(cid uint64) *[]ContestStatus {
 //GetUserGroupByID get
 func (hdl *DBHandler) GetUserGroupByID(gid uint) *UserGroup {
 	ret := &UserGroup{}
-	hdl.sqlDB.Preload("users").First(ret, gid)
+	hdl.sqlDB.Preload("Users").First(ret, gid)
 	return ret
 }
 

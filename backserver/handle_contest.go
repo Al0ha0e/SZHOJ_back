@@ -57,7 +57,7 @@ func (bs *BackServer) getContestByID(c *gin.Context) {
 	if succ || uid == contest.Creator {
 		c.JSON(http.StatusOK, contest)
 	} else {
-		c.String(http.StatusForbidden, "no authorize")
+		c.String(http.StatusUnauthorized, "no authorize")
 	}
 }
 

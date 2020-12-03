@@ -132,4 +132,5 @@ type ContestStatus struct {
 	State         int       `json:"state"`
 	RunningTime   uint      `json:"time"`
 	RunningMemory uint      `json:"memory"`
+	Code          *[]byte   `gorm:"-" json:"-"`
 }

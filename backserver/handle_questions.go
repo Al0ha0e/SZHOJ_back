@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"unicode/utf8"
 
 	"github.com/Al0ha0e/SZHOJ_back/dbhandler"
 	"github.com/gin-contrib/sessions"
@@ -99,7 +100,10 @@ func (bs *BackServer) uploadQuestion(c *gin.Context) {
 		c.String(http.StatusBadRequest, "form error: bad format")
 		return
 	}
-	if len(qinfo.Name) > 15 || len(qinfo.Name) < 1 {
+	fmt.Println(qinfo.Name, qinfo.Creator)
+	nameL := utf8.RuneCountInString(qinfo.Name)
+	if nameL > 15 || nameL < 1 {
+		fmt.Println("BAD", qinfo.Name, len(qinfo.Name))
 		c.String(http.StatusOK, "bad name format")
 		return
 	}
