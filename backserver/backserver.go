@@ -76,21 +76,6 @@ func (bs *BackServer) Init() error {
 
 	bs.server = gin.Default()
 
-	bs.server.Use(func(c *gin.Context) {
-		fmt.Println("ORIGIN", c.Request.Header.Get("Origin"), c.Request.Host)
-		c.Next()
-		//c.Header("Access-Control-Allow-Origin", "http://localhost:8080")
-		fmt.Println(c.Request.Header.Get("Access-Control-Allow-Origin"))
-	})
-	/*
-		config := cors.DefaultConfig()
-		config.AllowCredentials = true
-		//config.AllowAllOrigins = true
-		config.AllowOrigins = []string{"http://127.0.0.1:8080"}                                                                                          //允许所有域名
-		config.AllowMethods = []string{"GET", "POST", "OPTIONS", "*"}                                                                                    //允许请求的方法
-		config.AllowHeaders = []string{"tus-resumable", "upload-length", "upload-metadata", "cache-control", "x-requested-with", "X-Custom-Header", "*"} //允许的Header
-		config.ExposeHeaders = []string{"X-Custom-Header", "Content-Length", "set-cookie"}
-		bs.server.Use(cors.New(config))*/
 	bs.server.Use(cors())
 
 	bs.store = cookie.NewStore([]byte("secret"))
@@ -104,12 +89,15 @@ func (bs *BackServer) Init() error {
 	bs.server.GET("/pgstatus", bs.getStatusByPage)
 	bs.server.GET("/ministatus", bs.getMiniStatus)
 	bs.server.GET("/singlestatus", bs.getStatusDetail)
+	bs.server.GET("/usergroup", bs.getUserGroup)
 	bs.server.POST("/login", bs.login)
 	bs.server.POST("/register", bs.register)
 	bs.server.POST("/questions", bs.getQuestions)
 	bs.server.POST("/status", bs.getOrSetStatus)
 	bs.server.POST("/upquestion", bs.uploadQuestion)
 	bs.server.POST("/upanswer", bs.commitAnswer)
+	bs.server.POST("/addgroup", bs.addUserGroup)
+	bs.server.POST("/delgroup", bs.deleteUserGroup)
 	return err
 }
 

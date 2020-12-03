@@ -62,6 +62,6 @@ func (bs *BackServer) getStatusDetail(c *gin.Context) {
 	if status.ID == 0 {
 		c.String(http.StatusNotFound, "no such status")
 	} else {
-		c.JSON(http.StatusOK, gin.H{"status": status, "code": code})
+		c.JSON(http.StatusOK, gin.H{"status": status, "code": string(code)})
 	}
 }

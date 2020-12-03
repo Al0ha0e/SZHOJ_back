@@ -129,3 +129,19 @@ func TestGetMiniStatus(t *testing.T) {
 		fmt.Println(val.ID, val.QuestionID, val.State)
 	}
 }
+
+func TestAddUserGroup(t *testing.T) {
+	hd := GetDBHandler()
+	err := hd.InitDBHandler()
+	if err != nil {
+		t.Error(err)
+	}
+	g := &UserGroup{
+		Name: "test_group",
+		Users: []User{
+			User{ID: 1, Name: "sa"},
+			User{ID: 2, Name: "sb"},
+		},
+	}
+	hd.AddUserGroup(g)
+}

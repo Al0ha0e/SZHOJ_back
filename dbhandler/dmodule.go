@@ -3,8 +3,6 @@ package dbhandler
 import (
 	"fmt"
 	"time"
-
-	"github.com/jinzhu/gorm"
 )
 
 //Question question structure
@@ -13,13 +11,14 @@ type Question struct {
 	Name        string `gorm:"type:varchar(15);" json:"name"`
 	Creator     uint   `json:"creator"`
 	Difficulty  uint   `json:"difficulty"`
-	TotalCount  uint   `json:"totCnt" `
-	AcceptCount uint   `json:"acCnt" `
-	TimeLimit   uint   `json:"timeLimit" `
-	MemoryLimit uint   `json:"memoryLimit" `
+	TotalCount  uint   `json:"totCnt"`
+	AcceptCount uint   `json:"acCnt"`
+	TimeLimit   uint   `json:"timeLimit"`
+	MemoryLimit uint   `json:"memoryLimit"`
+	ContestID   uint   `json:"cid"`
 
 	TotalStatus []Status `gorm:"ForeignKey:QuestionID" json:"-"`
-	Tags        []Tag    `gorm:"many2many:question_tags;" json:"tags" `
+	Tags        []Tag    `gorm:"many2many:question_tags;" json:"tags"`
 
 	//for db create transaction
 	Success bool       `gorm:"-" json:"-"`
@@ -71,8 +70,6 @@ type Status struct {
 	RunningTime   uint      `json:"time"`
 	RunningMemory uint      `json:"memory"`
 
-	TotalContestStatus []ContestStatus `gorm:"ForeignKey:StatusID" json:"-"`
-
 	Code *[]byte    `gorm:"-" json:"-"`
 	db   *DBHandler `gorm:"-" json:"-"`
 }
@@ -105,28 +102,34 @@ type Tag struct {
 
 //UserGroup usergroup structure
 type UserGroup struct {
-	gorm.Model
-	Name         string `gorm:"type:varchar(15);"`
-	Creator      uint
-	Contests     []Contest `gorm:"ForeignKey:UserGroupID"`
-	SeenContests []Contest `gorm:"ForeignKey:Visibility"`
+	ID       uint   `gorm:"primary_key"`
+	Name     string `gorm:"type:varchar(15);"`
+	Creator  uint
+	Users    []User    `gorm:"many2many:user_usergroups;"`
+	Contests []Contest `gorm:"ForeignKey:UserGroupID"`
 }
 
 //Contest contest structure
 type Contest struct {
-	gorm.Model
-	Creator     uint
-	UserGroupID uint
-	Visiblility uint
-	StartTime   time.Time
+	ID          uint      `gorm:"primary_key" json:"id"`
+	Name        string    `json:"name"`
+	Creator     uint      `json:"creator"`
+	UserGroupID uint      `json:"gid"`
+	StartTime   time.Time `json:"start"`
+	Duration    uint      `json:"duration"`
 
-	TotalContestStatus []ContestStatus `gorm:"ForeignKey:ContestID"`
-	Questions          []Question      `gorm:"many2many:contest_questions;"`
+	TotalContestStatus []ContestStatus `gorm:"ForeignKey:ContestID" json:"-"`
+	Questions          []Question      `gorm:"ForeignKey:ContestID" json:"-"`
 }
 
 //ContestStatus status of a contest
 type ContestStatus struct {
-	ID        uint
-	ContestID uint
-	StatusID  uint
+	ID            uint      `gorm:"primary_key" json:"id"`
+	ContestID     uint      `json:"cid"`
+	QuestionID    uint      `json:"qid"`
+	UserID        uint      `json:"uid"`
+	CommitTime    time.Time `json:"commitTime"`
+	State         int       `json:"state"`
+	RunningTime   uint      `json:"time"`
+	RunningMemory uint      `json:"memory"`
 }

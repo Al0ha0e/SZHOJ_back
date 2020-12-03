@@ -83,15 +83,48 @@ func (hdl *DBHandler) AddStatus(s *Status) {
 	hdl.sqlDB.Create(s)
 }
 
+//AddUserGroup add
+func (hdl *DBHandler) AddUserGroup(g *UserGroup) {
+	hdl.sqlDB.Create(g)
+}
+
+//AddContestStatus add
+func (hdl *DBHandler) AddContestStatus(s *Status) {
+	hdl.sqlDB.Create(s)
+}
+
+//AddContest Add a contest
+func (hdl *DBHandler) AddContest(c *Contest) {
+	hdl.sqlDB.Create(c)
+}
+
+//UpdateContestStatus asas
+func (hdl *DBHandler) UpdateContestStatus(s *Status) {
+	hdl.sqlDB.Save(s)
+}
+
 //UpdataStatus update status
 func (hdl *DBHandler) UpdataStatus(s *Status) {
 	hdl.sqlDB.Save(s)
+}
+
+//DeleteUserGroup del
+func (hdl *DBHandler) DeleteUserGroup(gid uint64) {
+	ug := &UserGroup{ID: uint(gid)}
+	hdl.sqlDB.Delete(ug)
 }
 
 //GetUserByName get user by username
 func (hdl *DBHandler) GetUserByName(name string) *User {
 	var user User
 	hdl.sqlDB.Where("name=?", name).First(&user)
+	return &user
+}
+
+//GetUserByID get
+func (hdl *DBHandler) GetUserByID(uid uint64) *User {
+	var user User
+	hdl.sqlDB.First(&user, uid)
 	return &user
 }
 
@@ -180,4 +213,55 @@ func (hdl *DBHandler) GetStatusByID(sid uint64) *Status {
 	ret := &Status{}
 	hdl.sqlDB.First(ret, sid)
 	return ret
+}
+
+//GetContestByPage get contest
+func (hdl *DBHandler) GetContestByPage(pageNum uint64, itemPerPage uint64) *[]Contest {
+	ret := make([]Contest, 0)
+	st := (pageNum - 1) * itemPerPage
+	en := pageNum * itemPerPage
+	hdl.sqlDB.Where("ID > ? AND ID <= ?", st, en).Order("StartTime DESC").Find(&ret)
+	return &ret
+}
+
+//GetContestByID get contest
+func (hdl *DBHandler) GetContestByID(cid uint64) *Contest {
+	ret := &Contest{}
+	hdl.sqlDB.First(ret, cid)
+	return ret
+}
+
+//GetContestStatus get
+func (hdl *DBHandler) GetContestStatus(cid uint64, uid uint64) *[]ContestStatus {
+	ret := make([]ContestStatus, 0)
+	hdl.sqlDB.Where("ContestID=? AND UserID=?", cid, uid).Find(&ret)
+	return &ret
+}
+
+//GetTotalContestStatus get
+func (hdl *DBHandler) GetTotalContestStatus(cid uint64) *[]ContestStatus {
+	ret := make([]ContestStatus, 0)
+	hdl.sqlDB.Where("ContestID=?", cid).Find(&ret)
+	return &ret
+}
+
+//GetUserGroupByID get
+func (hdl *DBHandler) GetUserGroupByID(gid uint) *UserGroup {
+	ret := &UserGroup{}
+	hdl.sqlDB.First(ret, gid)
+	return ret
+}
+
+//GetAttendedUserGroups attend
+func (hdl *DBHandler) GetAttendedUserGroups(uid uint) *[]UserGroup {
+	user := &User{}
+	hdl.sqlDB.Preload("user_groups").First(user, uid)
+	return &user.AttendedUserGroups
+}
+
+//GetCreatedUserGroups attend
+func (hdl *DBHandler) GetCreatedUserGroups(uid uint) *[]UserGroup {
+	user := &User{}
+	hdl.sqlDB.Preload("user_groups").First(user, uid)
+	return &user.CreatedUserGroups
 }
