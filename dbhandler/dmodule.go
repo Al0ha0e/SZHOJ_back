@@ -106,7 +106,7 @@ type UserGroup struct {
 	Name     string    `gorm:"type:varchar(15);" json:"name"`
 	Creator  uint      `json:"creator"`
 	Users    []User    `gorm:"many2many:user_usergroups;" json:"users"`
-	Contests []Contest `gorm:"ForeignKey:UserGroupID" json:"-"`
+	Contests []Contest `gorm:"ForeignKey:UserGroupID;" json:"-"`
 }
 
 //Contest contest structure

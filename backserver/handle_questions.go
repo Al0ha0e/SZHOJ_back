@@ -40,29 +40,30 @@ func (bs *BackServer) getQuestionsByPage(c *gin.Context) {
 		c.String(http.StatusBadRequest, "bad format")
 	}
 	ret := bs.handler.GetQuestionsByPage(pgnum, ippg)
+	qcnt := bs.handler.GetQuestionCnt()
 	if len(*ret) < 1 {
-		c.String(http.StatusNotFound, "no such page")
+		c.String(http.StatusNotFound, "no such page or no questions")
 	} else {
-		c.JSON(http.StatusOK, *ret)
+		c.JSON(http.StatusOK, gin.H{"questions": *ret, "count": qcnt})
 	}
 }
 
-func (bs *BackServer) getQuestions(c *gin.Context) {
-	qInfo := dbhandler.Question{}
-	if err := c.ShouldBind(&qInfo); err == nil {
-		fmt.Println(qInfo.Name, qInfo.ID, qInfo.Tags)
-		qInfo.ID = 0
-		ret := bs.handler.GetQuestions(&qInfo)
-		if len(*ret) < 1 {
-			c.String(http.StatusNotFound, "question not found")
-		} else {
-			c.JSON(http.StatusOK, *ret)
-		}
+// func (bs *BackServer) getQuestions(c *gin.Context) {
+// 	qInfo := dbhandler.Question{}
+// 	if err := c.ShouldBind(&qInfo); err == nil {
+// 		fmt.Println(qInfo.Name, qInfo.ID, qInfo.Tags)
+// 		qInfo.ID = 0
+// 		ret := bs.handler.GetQuestions(&qInfo)
+// 		if len(*ret) < 1 {
+// 			c.String(http.StatusNotFound, "question not found")
+// 		} else {
+// 			c.JSON(http.StatusOK, *ret)
+// 		}
 
-	} else {
-		c.String(http.StatusNotFound, `invalid form`)
-	}
-}
+// 	} else {
+// 		c.String(http.StatusNotFound, `invalid form`)
+// 	}
+// }
 
 func (bs *BackServer) getQuestionDesc(c *gin.Context) {
 	qids := c.DefaultQuery("qid", "1")

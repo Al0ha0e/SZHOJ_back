@@ -15,10 +15,11 @@ func (bs *BackServer) getStatusByPage(c *gin.Context) {
 	pgnum, _ := strconv.ParseUint(pg, 0, 32)
 	ippg, _ := strconv.ParseUint(cnt, 0, 32)
 	ret := bs.handler.GetStatusByPage(pgnum, ippg)
+	scnt := bs.handler.GetStatusCnt()
 	if len(*ret) < 1 {
 		c.String(http.StatusNotFound, "no such status")
 	} else {
-		c.JSON(http.StatusOK, *ret)
+		c.JSON(http.StatusOK, gin.H{"status": *ret, "count": scnt})
 	}
 }
 

@@ -28,10 +28,11 @@ func (bs *BackServer) getContestByPage(c *gin.Context) {
 	pgnum, _ := strconv.ParseUint(pg, 0, 32)
 	ippg, _ := strconv.ParseUint(cnt, 0, 32)
 	ret := bs.handler.GetContestByPage(pgnum, ippg)
+	ccnt := bs.handler.GetContestCnt()
 	if len(*ret) < 1 {
 		c.String(http.StatusNotFound, "no such status")
 	} else {
-		c.JSON(http.StatusOK, *ret)
+		c.JSON(http.StatusOK, gin.H{"contest": *ret, "count": ccnt})
 	}
 }
 
@@ -63,9 +64,25 @@ func (bs *BackServer) getContestByID(c *gin.Context) {
 
 func (bs *BackServer) getContestStatus(c *gin.Context) {
 	//Auth
-
+	cids := c.DefaultQuery("cid", "0")
+	cid, _ := strconv.ParseUint(cids, 0, 32)
+	uids := c.DefaultQuery("uid", "0")
+	uid, _ := strconv.ParseUint(uids, 0, 32)
+	status := bs.handler.GetContestStatus(cid, uid)
+	if len(*status) == 0 {
+		c.String(http.StatusNotFound, "no such status")
+	} else {
+		c.JSON(http.StatusOK, *status)
+	}
 }
 
 func (bs *BackServer) getTotalStatus(c *gin.Context) {
-
+	cids := c.DefaultQuery("cid", "0")
+	cid, _ := strconv.ParseUint(cids, 0, 32)
+	status := bs.handler.GetTotalContestStatus(cid)
+	if len(*status) == 0 {
+		c.String(http.StatusNotFound, "no such status")
+	} else {
+		c.JSON(http.StatusOK, *status)
+	}
 }

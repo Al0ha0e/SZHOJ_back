@@ -27,19 +27,19 @@ func (bs *BackServer) getUserGroup(c *gin.Context) {
 	c.JSON(http.StatusOK, *ug)
 }
 
-func parseUserGroup(content string) (*[]dbhandler.User, error) {
+func (bs *BackServer) parseUserGroup(content string) (*[]dbhandler.User, error) {
 	ret := make([]dbhandler.User, 0)
 	users := strings.Split(content, "|")
 	for _, usr := range users {
 		ufield := strings.Fields(usr)
-		if len(ufield) != 2 {
+		if len(ufield) != 1 {
 			return nil, fmt.Errorf("field mismatch")
 		}
 		uid, err := strconv.ParseUint(ufield[0], 0, 32)
 		if err != nil {
 			return nil, err
 		}
-		ret = append(ret, dbhandler.User{ID: uint(uid), Name: ufield[1]})
+		ret = append(ret, *bs.handler.GetUserByID(uint64(uid)))
 	}
 	return &ret, nil
 }
@@ -66,7 +66,7 @@ func (bs *BackServer) addUserGroup(c *gin.Context) {
 		c.String(http.StatusBadRequest, "file error: cannot read file")
 		return
 	}
-	users, err := parseUserGroup(string(content))
+	users, err := bs.parseUserGroup(string(content))
 	if err != nil {
 		c.String(http.StatusBadRequest, "file error: bad format")
 		return

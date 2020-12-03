@@ -69,23 +69,23 @@ func TestGetQuestionByID(t *testing.T) {
 	t.Log(sq.Name)
 }
 
-func TestGetQuestions(t *testing.T) {
-	hd := GetDBHandler()
-	err := hd.InitDBHandler()
-	if err != nil {
-		t.Error(err)
-	}
-	cond := &Question{
-		//Name: "中文测试",
-		//Difficulty: 10,
-		Tags: []Tag{Tag{Name: "c"}, Tag{Name: "b"}},
-	}
-	sq := hd.GetQuestions(cond)
-	for _, val := range *sq {
-		fmt.Println(val.ID)
-	}
-	//t.Log((*sq)[0].Name)
-}
+// func TestGetQuestions(t *testing.T) {
+// 	hd := GetDBHandler()
+// 	err := hd.InitDBHandler()
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// 	cond := &Question{
+// 		//Name: "中文测试",
+// 		//Difficulty: 10,
+// 		Tags: []Tag{Tag{Name: "c"}, Tag{Name: "b"}},
+// 	}
+// 	sq := hd.GetQuestions(cond)
+// 	for _, val := range *sq {
+// 		fmt.Println(val.ID)
+// 	}
+// 	//t.Log((*sq)[0].Name)
+// }
 
 func TestGetQuestionsByPage(t *testing.T) {
 	hd := GetDBHandler()

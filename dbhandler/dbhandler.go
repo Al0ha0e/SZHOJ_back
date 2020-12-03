@@ -106,6 +106,11 @@ func (hdl *DBHandler) UpdateContestStatus(s *Status) {
 //UpdataStatus update status
 func (hdl *DBHandler) UpdataStatus(s *Status) {
 	question := hdl.GetQuestionByID(uint64(s.QuestionID))
+	question.TotalCount++
+	if s.State == 1 {
+		question.AcceptCount++
+	}
+	hdl.updateQuestion(question)
 	if question.ContestID != 0 {
 		cStatus := ContestStatus{
 			ContestID:     question.ContestID,
@@ -116,12 +121,16 @@ func (hdl *DBHandler) UpdataStatus(s *Status) {
 			RunningTime:   s.RunningTime,
 			RunningMemory: s.RunningMemory,
 		}
-		hdl.sqlDB.Create(cStatus)
+		hdl.sqlDB.Create(&cStatus)
 		hdl.sqlDB.Delete(s)
 	} else {
 		hdl.sqlDB.Save(s)
 	}
 
+}
+
+func (hdl *DBHandler) updateQuestion(q *Question) {
+	hdl.sqlDB.Save(q)
 }
 
 //DeleteUserGroup del
@@ -147,7 +156,21 @@ func (hdl *DBHandler) GetUserByID(uid uint64) *User {
 //GetQuestionCnt get count
 func (hdl *DBHandler) GetQuestionCnt() uint {
 	var ret uint
-	hdl.sqlDB.Table("questions").Count(&ret)
+	hdl.sqlDB.Table("questions").Where("contest_id = ?", 0).Count(&ret)
+	return ret
+}
+
+//GetStatusCnt get count
+func (hdl *DBHandler) GetStatusCnt() uint {
+	var ret uint
+	hdl.sqlDB.Table("statuses").Count(&ret)
+	return ret
+}
+
+//GetContestCnt get count
+func (hdl *DBHandler) GetContestCnt() uint {
+	var ret uint
+	hdl.sqlDB.Table("contests").Count(&ret)
 	return ret
 }
 
@@ -156,7 +179,7 @@ func (hdl *DBHandler) GetQuestionsByPage(pageNum uint64, itemPerPage uint64) *[]
 	ret := make([]Question, 0)
 	st := (pageNum - 1) * itemPerPage
 	en := pageNum * itemPerPage
-	hdl.sqlDB.Preload("Tags").Where("ID > ? AND ID <= ? AND ContestID = ?", st, en, 0).Find(&ret)
+	hdl.sqlDB.Preload("Tags").Where("ID > ? AND ID <= ? AND contest_id = ?", st, en, 0).Find(&ret)
 	return &ret
 }
 
@@ -170,28 +193,28 @@ func (hdl *DBHandler) GetQuestionByID(id uint64) *Question {
 	return ret
 }
 
-//GetQuestions Get All questions fulfill the conditions given by info
-func (hdl *DBHandler) GetQuestions(info *Question) *[]Question {
-	ret := make([]Question, 0)
-	query := hdl.sqlDB.Preload("Tags").Where("ContestID=?", 0)
-	if len(info.Name) > 0 {
-		query = query.Where("Name=?", info.Name)
-	}
-	if info.Difficulty > 0 {
-		query = query.Where("Difficulty=?", info.Difficulty)
-	}
-	//Caution!!! Beacuse of the BAD BEHAVIOUR appears when OR operation is performed,
-	//DO NOT QUERY OTHER CONDITIONS WITH TAGS!!!
-	// if len(info.Tags) > 0 {
-	// 	query = query.Joins("JOIN question_tags ON questions.id=question_tags.question_id")
-	// 	query = query.Where("tag_name=?", info.Tags[0].Name)
-	// 	for i := 1; i < len(info.Tags); i++ {
-	// 		query = query.Or("tag_name=?", info.Tags[i].Name)
-	// 	}
-	// }
-	query.Find(&ret)
-	return &ret
-}
+// //GetQuestions Get All questions fulfill the conditions given by info
+// func (hdl *DBHandler) GetQuestions(info *Question) *[]Question {
+// 	ret := make([]Question, 0)
+// 	query := hdl.sqlDB.Preload("Tags").Where("ContestID=?", 0)
+// 	if len(info.Name) > 0 {
+// 		query = query.Where("Name=?", info.Name)
+// 	}
+// 	if info.Difficulty > 0 {
+// 		query = query.Where("Difficulty=?", info.Difficulty)
+// 	}
+// 	//Caution!!! Beacuse of the BAD BEHAVIOUR appears when OR operation is performed,
+// 	//DO NOT QUERY OTHER CONDITIONS WITH TAGS!!!
+// 	// if len(info.Tags) > 0 {
+// 	// 	query = query.Joins("JOIN question_tags ON questions.id=question_tags.question_id")
+// 	// 	query = query.Where("tag_name=?", info.Tags[0].Name)
+// 	// 	for i := 1; i < len(info.Tags); i++ {
+// 	// 		query = query.Or("tag_name=?", info.Tags[i].Name)
+// 	// 	}
+// 	// }
+// 	query.Find(&ret)
+// 	return &ret
+// }
 
 //GetStatusByPage Get All status
 func (hdl *DBHandler) GetStatusByPage(pageNum uint64, itemPerPage uint64) *[]Status {
@@ -250,14 +273,14 @@ func (hdl *DBHandler) GetContestByID(cid uint64) *Contest {
 //GetContestStatus get
 func (hdl *DBHandler) GetContestStatus(cid uint64, uid uint64) *[]ContestStatus {
 	ret := make([]ContestStatus, 0)
-	hdl.sqlDB.Where("ContestID=? AND UserID=?", cid, uid).Find(&ret)
+	hdl.sqlDB.Where("contest_id=? AND user_id=?", cid, uid).Find(&ret)
 	return &ret
 }
 
 //GetTotalContestStatus get
 func (hdl *DBHandler) GetTotalContestStatus(cid uint64) *[]ContestStatus {
 	ret := make([]ContestStatus, 0)
-	hdl.sqlDB.Where("ContestID=?", cid).Find(&ret)
+	hdl.sqlDB.Where("contest_id=?", cid).Find(&ret)
 	return &ret
 }
 
