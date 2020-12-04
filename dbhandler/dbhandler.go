@@ -1,3 +1,9 @@
+/************
+SZHOJ　V１.0.0 后端
+由孙梓涵编写
+本页面用于处理SQL数据库的增删改查
+************/
+
 package dbhandler
 
 import (
@@ -179,6 +185,7 @@ func (hdl *DBHandler) GetQuestionsByPage(pageNum uint64, itemPerPage uint64) *[]
 	ret := make([]Question, 0)
 	st := (pageNum - 1) * itemPerPage
 	en := pageNum * itemPerPage
+	//需要预加载Tag才能在查询结果中Tag字段非空
 	hdl.sqlDB.Preload("Tags").Where("ID > ? AND ID <= ? AND contest_id = ?", st, en, 0).Find(&ret)
 	return &ret
 }
@@ -189,6 +196,7 @@ func (hdl *DBHandler) GetQuestionByID(id uint64) *Question {
 	if hdl.sqlDB.NewRecord(ret) {
 		return nil
 	}
+	//需要预加载Tag才能在查询结果中Tag字段非空
 	hdl.sqlDB.Preload("Tags").First(ret, id)
 	return ret
 }
@@ -266,6 +274,7 @@ func (hdl *DBHandler) GetContestByPage(pageNum uint64, itemPerPage uint64) *[]Co
 //GetContestByID get contest
 func (hdl *DBHandler) GetContestByID(cid uint64) *Contest {
 	ret := &Contest{}
+	//需要预加载Questions才能在查询结果中Questions字段非空
 	hdl.sqlDB.Preload("Questions").First(ret, cid)
 	return ret
 }
@@ -287,6 +296,7 @@ func (hdl *DBHandler) GetTotalContestStatus(cid uint64) *[]ContestStatus {
 //GetUserGroupByID get
 func (hdl *DBHandler) GetUserGroupByID(gid uint) *UserGroup {
 	ret := &UserGroup{}
+	//需要预加载Users才能在查询结果中Users字段非空
 	hdl.sqlDB.Preload("Users").First(ret, gid)
 	return ret
 }
@@ -295,6 +305,8 @@ func (hdl *DBHandler) GetUserGroupByID(gid uint) *UserGroup {
 func (hdl *DBHandler) GetAttendedUserGroups(uid uint) *[]UserGroup {
 	user := &User{ID: uid}
 	ret := make([]UserGroup, 0)
+	//需要预加载Users才能在查询结果中Users字段非空
+	//此处还需根据外键关系获得AttendedUserGroups
 	hdl.sqlDB.Preload("Users").Model(user).Association("AttendedUserGroups").Find(&ret)
 	return &ret
 }
@@ -303,6 +315,8 @@ func (hdl *DBHandler) GetAttendedUserGroups(uid uint) *[]UserGroup {
 func (hdl *DBHandler) GetCreatedUserGroups(uid uint) *[]UserGroup {
 	user := &User{ID: uid}
 	ret := make([]UserGroup, 0)
+	//需要预加载Users才能在查询结果中Users字段非空
+	//此处还需根据外键关系获得CreatedUserGroups
 	hdl.sqlDB.Preload("Users").Model(user).Association("CreatedUserGroups").Find(&ret)
 	return &ret
 }

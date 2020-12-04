@@ -1,3 +1,8 @@
+/************
+SZHOJ　V１.0.0 后端
+由孙梓涵编写
+本页面用于处理问题上传及查询请求
+************/
 package backserver
 
 import (
@@ -13,6 +18,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+//按ID获取问题
 func (bs *BackServer) getQuesionByID(c *gin.Context) {
 	qids := c.DefaultQuery("qid", "0")
 	qid, err := strconv.ParseUint(qids, 0, 32)
@@ -27,6 +33,7 @@ func (bs *BackServer) getQuesionByID(c *gin.Context) {
 	}
 }
 
+//按页面获取问题
 func (bs *BackServer) getQuestionsByPage(c *gin.Context) {
 	fmt.Println("HEAR")
 	pg := c.DefaultQuery("pg", "1")
@@ -65,6 +72,7 @@ func (bs *BackServer) getQuestionsByPage(c *gin.Context) {
 // 	}
 // }
 
+//获取问题描述
 func (bs *BackServer) getQuestionDesc(c *gin.Context) {
 	qids := c.DefaultQuery("qid", "1")
 	qid, err := strconv.ParseUint(qids, 0, 32)
@@ -72,7 +80,7 @@ func (bs *BackServer) getQuestionDesc(c *gin.Context) {
 		c.String(http.StatusBadRequest, "bad format")
 		return
 	}
-	ret, err := bs.handler.GetQuestionDesc(qid)
+	ret, err := bs.handler.GetQuestionDesc(qid) //在键值数据库中获取题目描述
 	if err != nil {
 		fmt.Printf(err.Error())
 		if err.Error() == "leveldb: not found" {
@@ -85,9 +93,10 @@ func (bs *BackServer) getQuestionDesc(c *gin.Context) {
 	c.Data(http.StatusOK, "text/html; charset=utf-8", ret)
 }
 
+//上传问题
 func (bs *BackServer) uploadQuestion(c *gin.Context) {
 	fmt.Println("UPLOAD")
-	err := c.Request.ParseMultipartForm(16 << 10) //16kb
+	err := c.Request.ParseMultipartForm(16 << 10) //限制上传数据量
 	if err != nil {
 		c.String(http.StatusBadRequest, "form error: too large")
 		return
@@ -96,30 +105,35 @@ func (bs *BackServer) uploadQuestion(c *gin.Context) {
 
 	qinfoJSON := formdata.Value["qinfo"][0]
 	var qinfo dbhandler.Question
-	err = json.Unmarshal([]byte(qinfoJSON), &qinfo)
+	err = json.Unmarshal([]byte(qinfoJSON), &qinfo) //解析题目信息
 	if err != nil {
 		c.String(http.StatusBadRequest, "form error: bad format")
 		return
 	}
+
 	fmt.Println(qinfo.Name, qinfo.Creator)
-	nameL := utf8.RuneCountInString(qinfo.Name)
+	nameL := utf8.RuneCountInString(qinfo.Name) //限制题目名称长度
 	if nameL > 15 || nameL < 1 {
 		fmt.Println("BAD", qinfo.Name, len(qinfo.Name))
 		c.String(http.StatusOK, "bad name format")
 		return
 	}
+
 	qinfo.ID = 0
 	session := sessions.Default(c)
 	if session.Get("loggedIn") != "true" || session.Get("userId") != qinfo.Creator {
+		//鉴权，要求登录用户与提交者一致
 		c.String(http.StatusForbidden, "no authority")
 		return
 	}
+
 	//hadle files
 	files := formdata.File["file"]
 	if len(files) != 3 {
 		c.String(http.StatusBadRequest, "file count mismatch")
 		return
 	}
+	//读取数据
 	qfiles := make([]*[]byte, 3)
 	for i, fh := range files {
 		file, err := fh.Open()

@@ -1,3 +1,8 @@
+/************
+SZHOJ　V１.0.0 后端
+由孙梓涵编写
+本页面用于处理状态请求
+************/
 package backserver
 
 import (
@@ -9,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+//按页面获取评测状态
 func (bs *BackServer) getStatusByPage(c *gin.Context) {
 	pg := c.DefaultQuery("pg", "1")
 	cnt := c.DefaultQuery("cnt", "10")
@@ -23,6 +29,7 @@ func (bs *BackServer) getStatusByPage(c *gin.Context) {
 	}
 }
 
+//按参数获取状态
 func (bs *BackServer) getOrSetStatus(c *gin.Context) {
 	sInfo := dbhandler.Status{}
 	if err := c.ShouldBind(&sInfo); err == nil {
@@ -44,6 +51,7 @@ func (bs *BackServer) getOrSetStatus(c *gin.Context) {
 	}
 }
 
+//获取最小化状态，仅包含用户id，题目id，结果
 func (bs *BackServer) getMiniStatus(c *gin.Context) {
 	uid := c.DefaultQuery("uid", "0")
 	uidNum, _ := strconv.ParseUint(uid, 0, 32)
@@ -55,6 +63,7 @@ func (bs *BackServer) getMiniStatus(c *gin.Context) {
 	}
 }
 
+//获取状态细节（代码）
 func (bs *BackServer) getStatusDetail(c *gin.Context) {
 	sids := c.DefaultQuery("sid", "0")
 	sid, _ := strconv.ParseUint(sids, 0, 32)

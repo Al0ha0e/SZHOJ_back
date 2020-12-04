@@ -1,3 +1,8 @@
+/************
+SZHOJ　V１.0.0 后端
+由孙梓涵编写
+本页面用于处理比赛相关请求
+************/
 package backserver
 
 import (
@@ -10,6 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+//添加比赛的API
 func (bs *BackServer) addContest(c *gin.Context) {
 	cInfo := dbhandler.Contest{}
 	if err := c.ShouldBind(&cInfo); err == nil {
@@ -22,6 +28,7 @@ func (bs *BackServer) addContest(c *gin.Context) {
 	}
 }
 
+//按页面获取比赛
 func (bs *BackServer) getContestByPage(c *gin.Context) {
 	pg := c.DefaultQuery("pg", "1")
 	cnt := c.DefaultQuery("cnt", "10")
@@ -36,6 +43,7 @@ func (bs *BackServer) getContestByPage(c *gin.Context) {
 	}
 }
 
+//按ID获取比赛
 func (bs *BackServer) getContestByID(c *gin.Context) {
 	session := sessions.Default(c)
 	uid := session.Get("userId").(uint)
@@ -49,19 +57,21 @@ func (bs *BackServer) getContestByID(c *gin.Context) {
 	gid := contest.UserGroupID
 	usergroup := bs.handler.GetUserGroupByID(gid)
 	succ := false
+	//检查用户是否在比赛用户组中
 	for _, usr := range usergroup.Users {
 		if uid == usr.ID {
 			succ = true
 			break
 		}
 	}
-	if succ || uid == contest.Creator {
+	if succ || uid == contest.Creator { //需要用户在比赛用户组中或为比赛创建者
 		c.JSON(http.StatusOK, contest)
 	} else {
 		c.String(http.StatusUnauthorized, "no authorize")
 	}
 }
 
+//获取用户自身比赛状态
 func (bs *BackServer) getContestStatus(c *gin.Context) {
 	//Auth
 	cids := c.DefaultQuery("cid", "0")
@@ -76,6 +86,7 @@ func (bs *BackServer) getContestStatus(c *gin.Context) {
 	}
 }
 
+//获取榜单
 func (bs *BackServer) getTotalStatus(c *gin.Context) {
 	cids := c.DefaultQuery("cid", "0")
 	cid, _ := strconv.ParseUint(cids, 0, 32)

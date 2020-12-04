@@ -1,3 +1,8 @@
+/************
+SZHOJ　V１.0.0 后端
+由孙梓涵编写
+本页面用于处理用户组
+************/
 package backserver
 
 import (
@@ -12,6 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+//按用户id获取用户组，参数为1表示获取参加的，否则为获取创建的
 func (bs *BackServer) getUserGroup(c *gin.Context) {
 	session := sessions.Default(c)
 	uid := session.Get("userId")
@@ -27,6 +33,7 @@ func (bs *BackServer) getUserGroup(c *gin.Context) {
 	c.JSON(http.StatusOK, *ug)
 }
 
+//从文件中读取用户组
 func (bs *BackServer) parseUserGroup(content string) (*[]dbhandler.User, error) {
 	ret := make([]dbhandler.User, 0)
 	users := strings.Split(content, "|")
@@ -44,14 +51,16 @@ func (bs *BackServer) parseUserGroup(content string) (*[]dbhandler.User, error) 
 	return &ret, nil
 }
 
+//添加用户组
 func (bs *BackServer) addUserGroup(c *gin.Context) {
 	session := sessions.Default(c)
 	uid := session.Get("userId")
-	err := c.Request.ParseMultipartForm(16 << 10) //16kb
+	err := c.Request.ParseMultipartForm(16 << 10) //数据大小限制
 	if err != nil {
 		c.String(http.StatusBadRequest, "form error: too large")
 		return
 	}
+
 	formdata := c.Request.MultipartForm
 	usergroup := &dbhandler.UserGroup{Creator: uid.(uint), Name: formdata.Value["name"][0]}
 	files := formdata.File["file"]
@@ -66,6 +75,7 @@ func (bs *BackServer) addUserGroup(c *gin.Context) {
 		c.String(http.StatusBadRequest, "file error: cannot read file")
 		return
 	}
+
 	users, err := bs.parseUserGroup(string(content))
 	if err != nil {
 		c.String(http.StatusBadRequest, "file error: bad format")
@@ -75,6 +85,8 @@ func (bs *BackServer) addUserGroup(c *gin.Context) {
 	bs.handler.AddUserGroup(usergroup)
 	c.String(http.StatusOK, "add success")
 }
+
+//删除用户组
 func (bs *BackServer) deleteUserGroup(c *gin.Context) {
 	session := sessions.Default(c)
 	uid := session.Get("userId")

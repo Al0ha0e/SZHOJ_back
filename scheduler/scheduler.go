@@ -1,3 +1,9 @@
+/************
+SZHOJ　V１.0.0 后端
+由孙梓涵编写
+本页面用于处理任务调度
+************/
+
 package scheduler
 
 import (
@@ -85,6 +91,7 @@ func (sch *Scheduler) informServer(status *workerStatus) {
 	sch.udpChan <- status
 }
 
+//调度器UDP服务器，死循环等待消息
 func (sch *Scheduler) serveUDP() {
 	fmt.Println("START  SERVERUDP")
 	defer sch.masterServer.Close()
@@ -98,12 +105,14 @@ func (sch *Scheduler) serveUDP() {
 	}
 }
 
+//处理服务端任务提交
 func (sch *Scheduler) handleTaskCommit(task *dbhandler.Status) {
 	fmt.Println("COMMIT TASK")
 	tInfo := &taskInfo{
 		status: task,
 	}
 	sch.pdQueueLock.Lock()
+	//向链表中加入任务
 	if sch.pendingTaskHead == nil && sch.pendingTaskTail == nil { //empty
 		sch.pendingTaskHead = tInfo
 		sch.pendingTaskTail = tInfo
@@ -114,6 +123,7 @@ func (sch *Scheduler) handleTaskCommit(task *dbhandler.Status) {
 	sch.pdQueueLock.Unlock()
 }
 
+//构造任务
 func (sch *Scheduler) constructJob(qid uint, code *[]byte) *Job {
 	job := &Job{QuestionID: qid, UserCode: string(*code)}
 	datain, dataout, _ := sch.backendDB.GetJudgeData(qid)
@@ -125,28 +135,36 @@ func (sch *Scheduler) constructJob(qid uint, code *[]byte) *Job {
 	return job
 }
 
+//当Worker发送消息时被调用，维护Worker状态
 func (sch *Scheduler) handleWorkerStatus(status *workerStatus) {
 	workerID := status.worker.String()
-	if status.QuestionID == 0 {
+	if status.QuestionID == 0 { //发送空状态作为心跳信号
 		//heartbeat
 		//fmt.Println("HEARTBEAT FROM", workerID)
-		_, ok := sch.workers[workerID]
+		_, ok := sch.workers[workerID] //获取信号对应Worker
 		if ok {
 			//update worker
 			if sch.pendingTaskHead != nil {
+				//评测队列非空，取一个任务给Worker
 				fmt.Println("NOT NULL")
 				_, running := sch.runningTask[workerID]
+				//Worker正在运行就不分配
 				if running {
 					fmt.Println("RUNNING")
 					return
 				}
+
+				//对评测队列加锁
 				sch.pdQueueLock.Lock()
+				//从队列链表中去除任务
 				task := sch.pendingTaskHead
 				sch.pendingTaskHead = sch.pendingTaskHead.next
 				if sch.pendingTaskHead == nil {
 					sch.pendingTaskTail = nil
 				}
 				sch.pdQueueLock.Unlock()
+
+				//绑定Worker与任务
 				sch.runningTask[workerID] = task
 				job := sch.constructJob(task.status.QuestionID, task.status.Code)
 				jobJSON, _ := json.Marshal(job)
@@ -156,6 +174,7 @@ func (sch *Scheduler) handleWorkerStatus(status *workerStatus) {
 				//sch.masterServer.WriteoUDP(jobjson, fr)
 			}
 		} else {
+			//此前没有Worker，将其加入Worker列表
 			sch.workers[workerID] = &workerInfo{ip: workerID}
 		}
 
@@ -164,6 +183,7 @@ func (sch *Scheduler) handleWorkerStatus(status *workerStatus) {
 		fmt.Println("CONNECT", workerID)
 		sch.workers[workerID] = &workerInfo{ip: workerID}
 	} else {
+		//提交评测结果
 		task, ok := sch.runningTask[workerID]
 		fmt.Println("COMMIT", workerID, status.QuestionID, status.State, status.Time, status.Memory)
 		if !ok || task.status.QuestionID != uint(status.QuestionID) {
@@ -174,10 +194,12 @@ func (sch *Scheduler) handleWorkerStatus(status *workerStatus) {
 		task.status.RunningTime = status.Time
 		task.status.RunningMemory = status.Memory
 		task.status.State = status.State
+		//将结果更新到数据库
 		sch.backendDB.UpdataStatus(task.status)
 	}
 }
 
+//死循环，等待几种channel获得数据并调用对应的处理函数
 func (sch *Scheduler) serve() {
 	fmt.Println("START SERVE")
 	for {

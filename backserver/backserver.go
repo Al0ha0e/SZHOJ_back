@@ -1,3 +1,9 @@
+/************
+SZHOJ　V１.0.0 后端
+由孙梓涵编写
+本页面用于处理路由、鉴权及CORS跨域
+************/
+
 package backserver
 
 import (
@@ -24,12 +30,14 @@ func GetBackServer() *BackServer {
 	return &BackServer{}
 }
 
+//鉴权中间件，在本地session中寻找用户请求对应的记录
 func auth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session := sessions.Default(c)
 		fmt.Println("SESSION", session.Get("loggedIn"), session.Get("username"), session.Get("userId"))
 		if session.Get("loggedIn") != "true" {
 			if c.FullPath() != "/login" && c.FullPath() != "/register" {
+				//没有登陆信息又请求注册登录以外的API，拒绝服务
 				c.String(http.StatusForbidden, "please login first")
 				c.Abort()
 				return
@@ -39,6 +47,7 @@ func auth() gin.HandlerFunc {
 	}
 }
 
+//CORS中间件，为响应添加CORS相关Header
 func cors() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		method := c.Request.Method
@@ -60,14 +69,16 @@ func cors() gin.HandlerFunc {
 
 //Init init BackServer
 func (bs *BackServer) Init() error {
-	bs.jobScheduler = scheduler.GetScheduler()
 
+	//初始化数据库接口
 	bs.handler = dbhandler.GetDBHandler()
 	err := bs.handler.InitDBHandler()
 	if err != nil {
 		return err
 	}
 
+	//初始化调度器
+	bs.jobScheduler = scheduler.GetScheduler()
 	err = bs.jobScheduler.Init(bs.handler)
 	if err != nil {
 		return err

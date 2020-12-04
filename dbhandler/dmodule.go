@@ -1,3 +1,9 @@
+/************
+SZHOJ　V１.0.0 后端
+由孙梓涵编写
+本页面用于定义SQL中存储的数据模型
+************/
+
 package dbhandler
 
 import (
@@ -38,9 +44,10 @@ func (q *Question) PrepareForCreation(db *DBHandler, desc *[]byte, datain *[]byt
 
 //AfterCreate Call back after create
 func (q *Question) AfterCreate() error {
+	//此处为题目上传的事务处理，题目信息存入SQL及文件存入levelDB应作为同一个事务
 	fmt.Println("AFTER")
 	err := q.db.addQuestionFiles(q.ID, q.desc, q.datain, q.dataout)
-	if err != nil {
+	if err != nil { //不成功即回滚
 		q.Success = false
 		return err
 	}

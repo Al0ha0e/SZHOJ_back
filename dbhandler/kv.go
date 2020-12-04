@@ -1,3 +1,9 @@
+/************
+SZHOJ　V１.0.0 后端
+由孙梓涵编写
+本页面用于处理键值对的存取
+************/
+
 package dbhandler
 
 import (
@@ -6,8 +12,10 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
+//添加问题相关的文件
 func (hdl *DBHandler) addQuestionFiles(id uint, desc *[]byte, datain *[]byte, dataout *[]byte) error {
 	strid := strconv.Itoa(int(id))
+	//作为一个事务提交
 	batch := new(leveldb.Batch)
 	batch.Put([]byte("desc_"+strid), *desc)
 	batch.Put([]byte("datain_"+strid), *datain)
