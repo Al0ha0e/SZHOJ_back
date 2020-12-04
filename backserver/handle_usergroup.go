@@ -83,7 +83,11 @@ func (bs *BackServer) addUserGroup(c *gin.Context) {
 	}
 	usergroup.Users = *users
 	bs.handler.AddUserGroup(usergroup)
-	c.String(http.StatusOK, "add success")
+	if usergroup.ID == 0 {
+		c.String(http.StatusInternalServerError, "add failed")
+	} else {
+		c.String(http.StatusOK, "add success")
+	}
 }
 
 //删除用户组

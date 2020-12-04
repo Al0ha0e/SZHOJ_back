@@ -227,9 +227,10 @@ func (hdl *DBHandler) GetQuestionByID(id uint64) *Question {
 //GetStatusByPage Get All status
 func (hdl *DBHandler) GetStatusByPage(pageNum uint64, itemPerPage uint64) *[]Status {
 	ret := make([]Status, 0)
-	st := (pageNum - 1) * itemPerPage
-	en := pageNum * itemPerPage
-	hdl.sqlDB.Where("ID > ? AND ID <= ?", st, en).Order("ID DESC").Find(&ret)
+	// st := (pageNum - 1) * itemPerPage
+	// en := pageNum * itemPerPage
+	//hdl.sqlDB.Where("ID > ? AND ID <= ?", st, en).Order("ID DESC").Find(&ret)
+	hdl.sqlDB.Order("ID DESC").Find(&ret)
 	return &ret
 }
 

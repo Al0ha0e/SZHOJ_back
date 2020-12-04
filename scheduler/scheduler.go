@@ -12,13 +12,17 @@ import (
 	"net"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/Al0ha0e/SZHOJ_back/dbhandler"
 )
 
+const TIME_LIMIT = 100
+
 type taskInfo struct {
-	status *dbhandler.Status
-	next   *taskInfo
+	status    *dbhandler.Status
+	next      *taskInfo
+	startTime time.Time
 }
 
 type workerInfo struct {
@@ -52,8 +56,10 @@ type Scheduler struct {
 	pendingTaskHead *taskInfo
 	pendingTaskTail *taskInfo
 	runningTask     map[string]*taskInfo
+	taskTicker      *time.Ticker
 	masterServer    *net.UDPConn
 	backendDB       *dbhandler.DBHandler
+	timeLimit       int
 	//masterClient *net.UDPConn
 }
 
@@ -64,6 +70,8 @@ func GetScheduler() *Scheduler {
 
 //Init init
 func (sch *Scheduler) Init(back *dbhandler.DBHandler) (err error) {
+	sch.timeLimit = TIME_LIMIT
+	sch.taskTicker = time.NewTicker(time.Second)
 	sch.workers = make(map[string]*workerInfo)
 	sch.runningTask = make(map[string]*taskInfo)
 	sch.backendDB = back
@@ -165,6 +173,7 @@ func (sch *Scheduler) handleWorkerStatus(status *workerStatus) {
 				sch.pdQueueLock.Unlock()
 
 				//绑定Worker与任务
+				task.startTime = time.Now()
 				sch.runningTask[workerID] = task
 				job := sch.constructJob(task.status.QuestionID, task.status.Code)
 				jobJSON, _ := json.Marshal(job)
@@ -199,6 +208,21 @@ func (sch *Scheduler) handleWorkerStatus(status *workerStatus) {
 	}
 }
 
+func (sch *Scheduler) handleTimerDispatch(currentTime time.Time) {
+	for worker, task := range sch.runningTask {
+		if task != nil {
+			fmt.Println(currentTime.Second() - task.startTime.Second())
+			if currentTime.Second()-task.startTime.Second() > sch.timeLimit {
+				fmt.Println("SERVER TLE", worker)
+				delete(sch.runningTask, worker)
+				task.status.State = 6
+				sch.backendDB.UpdataStatus(task.status)
+				break
+			}
+		}
+	}
+}
+
 //死循环，等待几种channel获得数据并调用对应的处理函数
 func (sch *Scheduler) serve() {
 	fmt.Println("START SERVE")
@@ -210,6 +234,8 @@ func (sch *Scheduler) serve() {
 		case status := <-sch.udpChan:
 			fmt.Println("UDP COMMIT")
 			sch.handleWorkerStatus(status)
+		case currentTime := <-sch.taskTicker.C:
+			sch.handleTimerDispatch(currentTime)
 		}
 	}
 }

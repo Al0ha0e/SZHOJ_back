@@ -21,7 +21,11 @@ func (bs *BackServer) addContest(c *gin.Context) {
 	if err := c.ShouldBind(&cInfo); err == nil {
 		cInfo.ID = 0
 		bs.handler.AddContest(&cInfo)
-		c.String(http.StatusOK, "contest add success")
+		if 0 == cInfo.ID {
+			c.String(http.StatusInternalServerError, "contest add failed")
+		} else {
+			c.String(http.StatusOK, "contest add success")
+		}
 	} else {
 		fmt.Println(err)
 		c.String(http.StatusBadRequest, "invalid form")
